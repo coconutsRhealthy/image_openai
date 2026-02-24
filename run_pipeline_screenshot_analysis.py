@@ -21,7 +21,7 @@ def image_already_in_db(image_filename, connection):
         cursor.close()
 
 def main():
-    txt_path = "/Users/lennartmac/Documents/Projects/image_openai/util/output_aaa_03.txt"
+    txt_path = "/Users/lennartmac/Documents/Projects/python/image_openai/util/output_aaa_13.txt"
     lines = read_txt_lines(txt_path)
     url_screenshot_dict = create_url_screenshot_dict_from_txt(lines)
 
