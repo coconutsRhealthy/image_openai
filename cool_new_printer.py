@@ -1,48 +1,17 @@
 import json
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Optional
 
 from db.db_connection import get_database_connection
+from run_pipeline_screenshot_analysis import make_image_url
 from util.json_util import get_offer
 
 
 BASE_SCREENSHOT_DIR = Path("/Users/lennartmac/Documents/ubuntu_mac_shared/screenshots")
 JSON_OUTPUT_FILE = Path("/Users/lennartmac/Documents/test_wgk.json")
 
-def resolve_screenshot_path(filename: str) -> Optional[Path]:
-    if not filename:
-        return None
-
-    try:
-        name = Path(filename).name  # extra veilig
-        webshop, date_part, _ = name.split("_", 2)
-
-        year = date_part[0:4]
-        month = date_part[4:6]
-        day = date_part[6:8]
-
-        return (
-                BASE_SCREENSHOT_DIR
-                / webshop
-                / year
-                / month
-                / day
-                / name
-        ).resolve()
-
-    except Exception as e:
-        print(f"⚠️ Could not resolve path for filename '{filename}': {e}")
-        return None
-
-
-def printable_path(path: Optional[Path]) -> str:
-    if not path:
-        return "(no file)"
-    if path.exists():
-        return f"file://{path}"
-    return f"{path} ⚠️ (file not found)"
-
+def resolve_screenshot_url(filename: str) -> str:
+    return make_image_url(filename)
 
 def get_all_offers_for_screenshot(screenshot_id: int) -> list:
     query = """
@@ -206,8 +175,8 @@ def print_new_offers_with_screenshot(
             f"Screenshot ID {row['screenshot_id']}"
         )
 
-        current_path = resolve_screenshot_path(row["current_image_filename"])
-        print(f"🖼️ Current screenshot: {printable_path(current_path)} ({row['current_screenshot_datetime']})")
+        current_url = resolve_screenshot_url(row["current_image_filename"])
+        print(f"🖼️ Current screenshot: {current_url} ({row['current_screenshot_datetime']})")
 
         print_offers("🆕 New offers (current):", filtered_offers)
 
@@ -221,8 +190,8 @@ def print_new_offers_with_screenshot(
             })
 
         if row.get("previous_screenshot_id"):
-            prev_path = resolve_screenshot_path(row["previous_image_filename"])
-            print(f"🕰️ Previous screenshot: {printable_path(prev_path)} ({row['previous_screenshot_datetime']})")
+            prev_url = resolve_screenshot_url(row["previous_image_filename"])
+            print(f"🕰️ Previous screenshot: {prev_url} ({row['previous_screenshot_datetime']})")
 
             if show_previous_offers:
                 prev_offers = get_all_offers_for_screenshot(row["previous_screenshot_id"])

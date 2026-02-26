@@ -1,13 +1,8 @@
 from openai import OpenAI
-import base64
 
 client = OpenAI(api_key='secret')
 
-def extract_promotions_from_image(image_path):
-    # Read image and convert to base64
-    with open(image_path, "rb") as f:
-        image_base64 = base64.b64encode(f.read()).decode("utf-8")
-
+def extract_promotions_from_image(image_url):
     prompt_text = """
     You are an expert in e-commerce and online promotions.
 
@@ -63,7 +58,7 @@ Rules:
                 {"type": "input_text", "text": prompt_text},
                 {
                     "type": "input_image",
-                    "image_url": f"data:image/png;base64,{image_base64}"
+                    "image_url": image_url
                 },
             ],
         }],
@@ -73,9 +68,9 @@ Rules:
 # Test block
 if __name__ == "__main__":
     # Local image file
-    test_image_path = "/Users/lennartmac/Documents/ubuntu_mac_shared/screenshots/zalando/2026/02/02/zalando_20260202_103342.png"
+    test_image_url = "zzz"
 
-    result = extract_promotions_from_image(test_image_path)
+    result = extract_promotions_from_image(test_image_url)
 
-    print(f"Analysis Result for Image: {test_image_path}")
+    print(f"Analysis Result for Image: {test_image_url}")
     print(result)

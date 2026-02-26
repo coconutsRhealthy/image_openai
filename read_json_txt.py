@@ -14,7 +14,7 @@ def read_txt_lines(txt_path: str) -> list[str]:
     with open(txt_path, "r") as f:
         return [line.strip() for line in f if line.strip()]
 
-def create_url_screenshot_dict_from_txt(lines: list[str]) -> dict[str, list[str]]:
+def create_filename_screenshot_dict_from_txt(lines: list[str]) -> dict[str, list[str]]:
     url_dict = {}
     for line in lines:
         if " - " not in line:

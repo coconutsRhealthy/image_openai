@@ -1,8 +1,7 @@
 import json
-import os
 import uuid
 
-from read_json_txt import read_txt_lines, create_url_screenshot_dict_from_txt
+from read_json_txt import read_txt_lines, create_filename_screenshot_dict_from_txt
 from ai.analyze_images import extract_promotions_from_image
 from db.store_screenshot_analysis_result import store_result
 from db.db_connection import get_database_connection
@@ -20,23 +19,26 @@ def image_already_in_db(image_filename, connection):
     finally:
         cursor.close()
 
+def make_image_url(image_filename: str) -> str:
+    base_url = "https://pub-f75dabf2f86f4ad4ba4765ede21e47cc.r2.dev"
+    return f"{base_url}/{image_filename}"
+
 def main():
-    txt_path = "/Users/lennartmac/Documents/Projects/python/image_openai/util/output_aaa_13.txt"
+    txt_path = "/Users/lennartmac/Documents/Projects/python/image_openai/util/output_aaa_r2_04.txt"
     lines = read_txt_lines(txt_path)
-    url_screenshot_dict = create_url_screenshot_dict_from_txt(lines)
+    filename_screenshot_dict = create_filename_screenshot_dict_from_txt(lines)
 
     with get_database_connection() as connection:
-        for webshop_name, image_paths in url_screenshot_dict.items():
-            for image_path in image_paths:
-                image_filename = os.path.basename(image_path)
-
+        for webshop_name, image_filenames in filename_screenshot_dict.items():
+            for image_filename in image_filenames:
                 if image_already_in_db(image_filename, connection):
                     print(f"Skipping {webshop_name}, image already in DB.")
                     continue
 
                 print(f"Analyzing image for: {webshop_name}")
                 try:
-                    analysis_result = extract_promotions_from_image(image_path)
+                    image_url = make_image_url(image_filename)
+                    analysis_result = extract_promotions_from_image(image_url)
                     print(f"Analysis result: {analysis_result}")
 
                     parsed_result = parse_openai_json(analysis_result)
