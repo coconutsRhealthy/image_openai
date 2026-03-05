@@ -6,8 +6,8 @@ def get_database_connection():
     """ Context manager for handling database connection. """
     connection = mysql.connector.connect(
         host="localhost",
-        user="root",
-        password="",
+        user="appuser",
+        password="app_password",
         database="py_diski_webshops"
     )
     try:
