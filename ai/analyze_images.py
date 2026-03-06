@@ -1,6 +1,7 @@
 from openai import OpenAI
+import os
 
-client = OpenAI(api_key='secret')
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def extract_promotions_from_image(image_url):
     prompt_text = """

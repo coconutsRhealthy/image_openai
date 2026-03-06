@@ -1,10 +1,10 @@
 import json
 import uuid
 
-from read_json_txt import read_txt_lines, create_filename_screenshot_dict_from_txt
 from ai.analyze_images import extract_promotions_from_image
 from db.store_screenshot_analysis_result import store_result
 from db.db_connection import get_database_connection
+from util.images_on_r2 import get_filenames_on_r2_per_webshop
 from util.json_util import parse_openai_json
 
 
@@ -24,9 +24,7 @@ def make_image_url(image_filename: str) -> str:
     return f"{base_url}/{image_filename}"
 
 def main():
-    txt_path = "/Users/lennartmac/Documents/Projects/python/image_openai/util/output_aaa_r2_04.txt"
-    lines = read_txt_lines(txt_path)
-    filename_screenshot_dict = create_filename_screenshot_dict_from_txt(lines)
+    filename_screenshot_dict = get_filenames_on_r2_per_webshop()
 
     with get_database_connection() as connection:
         for webshop_name, image_filenames in filename_screenshot_dict.items():

@@ -1,7 +1,8 @@
 import json
+import os
 from openai import OpenAI
 
-client = OpenAI(api_key = 'secret')
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
 def analyze_promotion_novelty(latest_promotions: dict, historical_promotions: list):

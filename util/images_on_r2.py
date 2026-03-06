@@ -6,12 +6,11 @@ import re
 # ======================
 # CONFIG
 # ======================
-R2_ACCOUNT_ID = "secret"
-R2_ACCESS_KEY = "secret"
-R2_SECRET_KEY = "secret"
+R2_ACCOUNT_ID = os.getenv("R2_ACCOUNT_ID")
+R2_ACCESS_KEY = os.getenv("R2_ACCESS_KEY")
+R2_SECRET_KEY = os.getenv("R2_SECRET_KEY")
 BUCKET_NAME = "screenshots"
-START_DATE = "2026-01-01"
-OUTPUT_FILE = "output_aaa_r2_02.txt"
+START_DATE = "2026-03-05"
 
 IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp")
 R2_ENDPOINT = f"https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
@@ -22,7 +21,7 @@ FILENAME_TIMESTAMP_REGEX = re.compile(r".*_(\d{8})_(\d{6})")
 # ======================
 # MAIN
 # ======================
-def main():
+def get_filenames_on_r2_per_webshop() -> dict[str, list[str]]:
     start_date = datetime.strptime(START_DATE, "%Y-%m-%d")
 
     s3 = boto3.client(
@@ -61,15 +60,17 @@ def main():
                 webshop_files[webshop] = []
             webshop_files[webshop].append((file_datetime, filename))
 
-    # schrijf output, gesorteerd op datum per webshop
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        for webshop in sorted(webshop_files.keys()):
-            for _, filename in sorted(webshop_files[webshop], key=lambda x: x[0]):
-                f.write(f"{webshop} - {filename}\n")
+    # Zet alles om naar dict[webshop] = lijst van filenames (gesorteerd op datetime)
+    filename_screenshot_dict = {
+        webshop: [fname for _, fname in sorted(files, key=lambda x: x[0])]
+        for webshop, files in webshop_files.items()
+    }
 
-    total = sum(len(v) for v in webshop_files.values())
-    print(f"Klaar! {total} regels geschreven naar {OUTPUT_FILE}")
+    total = sum(len(v) for v in filename_screenshot_dict.values())
+    print(f"Klaar! {total} bestanden gevonden.")
+
+    return filename_screenshot_dict
 
 
 if __name__ == "__main__":
-    main()
+    get_filenames_on_r2_per_webshop()

@@ -24,7 +24,7 @@ echo "Importing dump into MySQL..."
 mysql -u root py_diski_webshops < dump.sql
 
 echo "Running Python scripts..."
-python cool_new_printer_all_offers.py
+python run_pipeline_screenshot_analysis.py
 
 # Keep container alive (optioneel)
 tail -f /dev/null
