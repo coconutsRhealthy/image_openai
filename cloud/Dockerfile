@@ -14,11 +14,10 @@ RUN git clone --depth 1 https://github.com/coconutsRhealthy/image_openai.git .
 # Installeer Python dependencies (requirements.txt zit in cloud folder)
 RUN pip install --no-cache-dir -r cloud/requirements.txt
 
+# Entrypoint script executable maken
+RUN chmod +x cloud/entrypoint.sh
+
 # Expose MySQL poort
 EXPOSE 3306
 
-# Entrypoint
-COPY entrypoint.sh .
-RUN chmod +x entrypoint.sh
-
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["./cloud/entrypoint.sh"]
