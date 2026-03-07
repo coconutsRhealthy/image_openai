@@ -215,8 +215,7 @@ def print_new_offers_with_screenshot(
 
 if __name__ == "__main__":
     # Voorbeeld: alleen sitewide_hero_discount en timed tonen
-    print("Testje")
     print_new_offers_with_screenshot(
-        date(2026, 3, 1),
+        date(2026, 3, 7),
         promotion_types_to_show=["sitewide_hero_discount", "timed", "discount_code"]
     )

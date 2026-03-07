@@ -66,5 +66,5 @@ def run_pipeline(datetime_from: datetime, num_previous=5):
 
 if __name__ == "__main__":
     # Voorbeeld: alles sinds 1 februari 2026
-    datetime_from = datetime(2026, 2, 4)
+    datetime_from = datetime(2026, 3, 7)
     run_pipeline(datetime_from=datetime_from, num_previous=5)
