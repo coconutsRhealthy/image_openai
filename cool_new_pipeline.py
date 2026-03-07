@@ -19,7 +19,7 @@ def write_analysis_to_db(webshop_id, screenshot_id, analysis_result_json: str):
     print(analysis_result_json)
 
 
-def run_pipeline(datetime_from: datetime, num_previous=5):
+def run_pipeline(datetime_from: datetime, num_previous=1):
     """
     Pipeline:
     1. Haal screenshot IDs op sinds datetime_from
@@ -69,4 +69,4 @@ if __name__ == "__main__":
     today_amsterdam = datetime.now(ZoneInfo("Europe/Amsterdam")).date()
     date_minus_x_days = today_amsterdam - timedelta(days=0)
     datetime_from = datetime(date_minus_x_days.year, date_minus_x_days.month, date_minus_x_days.day)
-    run_pipeline(datetime_from=datetime_from, num_previous=5)
+    run_pipeline(datetime_from=datetime_from, num_previous=1)
