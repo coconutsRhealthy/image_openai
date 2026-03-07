@@ -24,8 +24,8 @@ EOF
 #mysql -u root py_diski_webshops < dump.sql
 
 echo "Running Python scripts..."
-#python run_pipeline_screenshot_analysis.py
-#python cool_new_pipeline.py
+python run_pipeline_screenshot_analysis.py
+python cool_new_pipeline.py
 python cool_new_printer_html.py
 
 # Keep container alive (optioneel)

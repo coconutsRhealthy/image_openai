@@ -6,6 +6,7 @@ from db.webshops_db_access import get_screenshot_ids_since, get_webshop_id, get_
 from util.json_util import create_openai_prompting_structure_current, create_openai_prompting_structure_previous
 from ai.check_new_promotions_feb_version import analyze_promotion_novelty
 from util.json_util import parse_openai_json
+from zoneinfo import ZoneInfo
 
 
 def write_analysis_to_db(webshop_id, screenshot_id, analysis_result_json: str):
@@ -65,6 +66,6 @@ def run_pipeline(datetime_from: datetime, num_previous=5):
 
 
 if __name__ == "__main__":
-    # Voorbeeld: alles sinds 1 februari 2026
-    datetime_from = datetime(2026, 3, 7)
+    today_amsterdam = datetime.now(ZoneInfo("Europe/Amsterdam")).date()
+    datetime_from = datetime(today_amsterdam.year, today_amsterdam.month, today_amsterdam.day)
     run_pipeline(datetime_from=datetime_from, num_previous=5)

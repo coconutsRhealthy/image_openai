@@ -1,10 +1,13 @@
+import boto3
 import json
 from datetime import date, datetime, timedelta
 from pathlib import Path
+import os
 
 from db.db_connection import get_database_connection
 from run_pipeline_screenshot_analysis import make_image_url
 from util.json_util import get_offer
+from zoneinfo import ZoneInfo
 
 
 BASE_SCREENSHOT_DIR = Path("/Users/lennartmac/Documents/ubuntu_mac_shared/screenshots")
@@ -277,12 +280,35 @@ Screenshot ID: {row['screenshot_id']}
 
     final_html = "\n".join(html_parts)
 
-    print(final_html)
+    filename = for_date.strftime("%Y-%m-%d.html")
+
+    r2_acc_id = os.getenv("R2_ACCOUNT_ID")
+    r2_access_key = os.getenv("R2_ACCESS_KEY")
+    r2_secret_key = os.getenv("R2_SECRET_KEY")
+    r2_endpoint = f"https://{r2_acc_id}.r2.cloudflarestorage.com"
+
+    r2 = boto3.client(
+        "s3",
+        endpoint_url=r2_endpoint,
+        aws_access_key_id=r2_access_key,
+        aws_secret_access_key=r2_secret_key,
+    )
+
+    r2.put_object(
+        Bucket="promotions",
+        Key=filename,
+        Body=final_html.encode("utf-8"),
+        ContentType="text/html",
+    )
+
+    print("html geupload naar r2! :)")
 
 
 if __name__ == "__main__":
 
+    today_amsterdam = datetime.now(ZoneInfo("Europe/Amsterdam")).date()
+
     print_new_offers_with_screenshot(
-        date(2026, 3, 7),
+        today_amsterdam,
         promotion_types_to_show=["sitewide_hero_discount", "timed", "discount_code"]
     )
