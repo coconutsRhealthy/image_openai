@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from db.store_new_promotion_analysis import insert_novelty
 from db.webshops_db_access import get_screenshot_ids_since, get_webshop_id, get_existing_screenshot_ids_in_detected_discounts
@@ -67,5 +67,6 @@ def run_pipeline(datetime_from: datetime, num_previous=5):
 
 if __name__ == "__main__":
     today_amsterdam = datetime.now(ZoneInfo("Europe/Amsterdam")).date()
-    datetime_from = datetime(today_amsterdam.year, today_amsterdam.month, today_amsterdam.day)
+    date_minus_3_days = today_amsterdam - timedelta(days=3)
+    datetime_from = datetime(date_minus_3_days.year, date_minus_3_days.month, date_minus_3_days.day)
     run_pipeline(datetime_from=datetime_from, num_previous=5)
