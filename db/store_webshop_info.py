@@ -6,8 +6,8 @@ def store_webshops(webshops: dict):
         # Verbind met MySQL
         db_connection = mysql.connector.connect(
             host="localhost",
-            user="root",
-            password="",
+            user="appuser",
+            password="app_password",
             database="py_diski_webshops"
         )
         cursor = db_connection.cursor()
