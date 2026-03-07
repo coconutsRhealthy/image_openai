@@ -67,6 +67,6 @@ def run_pipeline(datetime_from: datetime, num_previous=5):
 
 if __name__ == "__main__":
     today_amsterdam = datetime.now(ZoneInfo("Europe/Amsterdam")).date()
-    date_minus_3_days = today_amsterdam - timedelta(days=3)
-    datetime_from = datetime(date_minus_3_days.year, date_minus_3_days.month, date_minus_3_days.day)
+    date_minus_x_days = today_amsterdam - timedelta(days=0)
+    datetime_from = datetime(date_minus_x_days.year, date_minus_x_days.month, date_minus_x_days.day)
     run_pipeline(datetime_from=datetime_from, num_previous=5)
