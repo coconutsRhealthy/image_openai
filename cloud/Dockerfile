@@ -9,6 +9,7 @@ RUN apt-get update && \
 WORKDIR /app
 
 # Clone hele GitHub repo (alle scripts en requirements)
+ARG CACHEBUST=1
 RUN git clone --depth 1 https://github.com/coconutsRhealthy/image_openai.git .
 
 # Installeer Python dependencies (requirements.txt zit in cloud folder)

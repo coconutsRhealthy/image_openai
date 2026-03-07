@@ -18,7 +18,7 @@ FLUSH PRIVILEGES;
 EOF
 
 echo "Downloading R2 dump..."
-curl -L -o dump.sql https://pub-bf3c129fe9d64e8695d474075e0dfcc6.r2.dev/py_diski_webshops_test_container.sql
+curl -L -o dump.sql https://pub-bf3c129fe9d64e8695d474075e0dfcc6.r2.dev/webshop_dump_7mrt.sql
 
 echo "Importing dump into MySQL..."
 mysql -u root py_diski_webshops < dump.sql
