@@ -17,11 +17,11 @@ GRANT ALL PRIVILEGES ON py_diski_webshops.* TO 'appuser'@'localhost';
 FLUSH PRIVILEGES;
 EOF
 
-echo "Downloading R2 dump..."
-curl -L -o dump.sql https://pub-bf3c129fe9d64e8695d474075e0dfcc6.r2.dev/webshop_dump_7mrt.sql
-
-echo "Importing dump into MySQL..."
-mysql -u root py_diski_webshops < dump.sql
+#echo "Downloading R2 dump..."
+#curl -L -o dump.sql https://pub-bf3c129fe9d64e8695d474075e0dfcc6.r2.dev/webshop_dump_7mrt.sql
+#
+#echo "Importing dump into MySQL..."
+#mysql -u root py_diski_webshops < dump.sql
 
 echo "Running Python scripts..."
 python cool_new_printer.py
