@@ -7,30 +7,70 @@ from db.db_connection import get_database_connection
 from util.images_on_r2 import get_filenames_on_r2_per_webshop
 from util.json_util import parse_openai_json
 
+from util.r2_image_sizes import (
+    get_two_latest_per_shop_from_bucket,
+    build_filename_index,
+    get_filesize_change_percent
+)
 
-def image_already_in_db(image_filename, connection):
-    """Check of de image_url al in de database staat"""
+
+def get_existing_images(connection):
+    """
+    Haal alle bestaande image_filenames op uit screenshot_analysis.
+    Returnt een set voor snelle lookup.
+    """
     cursor = connection.cursor(dictionary=True)
+
     try:
-        sql = "SELECT 1 FROM screenshot_analysis WHERE image_filename = %s LIMIT 1"
-        cursor.execute(sql, (image_filename,))
-        result = cursor.fetchone()
-        return result is not None
+        cursor.execute("SELECT image_filename FROM screenshot_analysis")
+        rows = cursor.fetchall()
     finally:
         cursor.close()
+
+    return {row["image_filename"] for row in rows}
 
 def make_image_url(image_filename: str) -> str:
     base_url = "https://pub-f75dabf2f86f4ad4ba4765ede21e47cc.r2.dev"
     return f"{base_url}/{image_filename}"
 
 def main():
+
+    filesize_threshold = 20
+
     filename_screenshot_dict = get_filenames_on_r2_per_webshop()
 
+    # 🔹 Filesize index bouwen
+    latest_two = get_two_latest_per_shop_from_bucket()
+    filename_index = build_filename_index(latest_two)
+
     with get_database_connection() as connection:
+        # 🔹 Eén keer alle bestaande images ophalen
+        existing_images = get_existing_images(connection)
+        print(f"ℹ️ {len(existing_images)} images already stored in DB")
+
         for webshop_name, image_filenames in filename_screenshot_dict.items():
             for image_filename in image_filenames:
-                if image_already_in_db(image_filename, connection):
-                    print(f"Skipping {webshop_name}, image already in DB.")
+
+                # 🔹 Skip als image al in DB zit
+                if image_filename in existing_images:
+                    print(f"Skipping {image_filename}, already in DB.")
+                    continue
+
+                # 🔹 Filesize change check
+                percent_filesize_change = get_filesize_change_percent(
+                    image_filename,
+                    filename_index
+                )
+
+                if percent_filesize_change is None:
+                    print(f"Skipping {image_filename}: filesize info missing.")
+                    continue
+
+                if percent_filesize_change < filesize_threshold:
+                    print(
+                        f"Skipping {image_filename}: filesize change "
+                        f"{percent_filesize_change:.2f}% < {filesize_threshold}%"
+                    )
                     continue
 
                 print(f"Analyzing image for: {webshop_name}")
@@ -53,6 +93,9 @@ def main():
 
                     # Store result in DB using foreign key logic
                     store_result(webshop_name, image_filename, parsed_result_json)
+
+                    # 🔹 Update cache zodat dezelfde image niet opnieuw verwerkt wordt
+                    existing_images.add(image_filename)
 
                 except Exception as e:
                     print(f"Failed for {webshop_name}: {e}")
