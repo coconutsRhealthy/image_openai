@@ -280,7 +280,7 @@ Screenshot ID: {row['screenshot_id']}
 
     final_html = "\n".join(html_parts)
 
-    filename = for_date.strftime("%Y-%m-%d.html")
+    filename = for_date.strftime("%Y-%m-%d_%H-%M-%S.html")
 
     r2_acc_id = os.getenv("R2_ACCOUNT_ID")
     r2_access_key = os.getenv("R2_ACCESS_KEY")

@@ -66,12 +66,12 @@ def main():
                     print(f"Skipping {image_filename}: filesize info missing.")
                     continue
 
-                if percent_filesize_change < filesize_threshold:
-                    print(
-                        f"Skipping {image_filename}: filesize change "
-                        f"{percent_filesize_change:.2f}% < {filesize_threshold}%"
-                    )
-                    continue
+                # if percent_filesize_change < filesize_threshold:
+                #     print(
+                #         f"Skipping {image_filename}: filesize change "
+                #         f"{percent_filesize_change:.2f}% < {filesize_threshold}%"
+                #     )
+                #     continue
 
                 print(f"Analyzing image for: {webshop_name}")
                 try:
