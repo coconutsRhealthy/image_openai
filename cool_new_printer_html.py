@@ -306,9 +306,9 @@ Screenshot ID: {row['screenshot_id']}
 
 if __name__ == "__main__":
 
-    today_amsterdam = datetime.now(ZoneInfo("Europe/Amsterdam")).date()
+    yesterday_amsterdam = datetime.now(ZoneInfo("Europe/Amsterdam")).date() - timedelta(days=1)
 
     print_new_offers_with_screenshot(
-        today_amsterdam,
+        yesterday_amsterdam,
         promotion_types_to_show=["sitewide_hero_discount", "timed", "discount_code"]
     )
