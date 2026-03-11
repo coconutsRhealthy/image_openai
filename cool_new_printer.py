@@ -7,6 +7,7 @@ from pathlib import Path
 from db.db_connection import get_database_connection
 from run_pipeline_screenshot_analysis import make_image_url
 from util.json_util import get_offer
+from zoneinfo import ZoneInfo
 
 
 BASE_SCREENSHOT_DIR = Path("/Users/lennartmac/Documents/ubuntu_mac_shared/screenshots")
