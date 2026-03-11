@@ -53,7 +53,7 @@ def main():
 
                 # 🔹 Skip als image al in DB zit
                 if image_filename in existing_images:
-                    print(f"Skipping {image_filename}, already in DB.")
+                    # print(f"Skipping {image_filename}, already in DB.")
                     continue
 
                 # 🔹 Filesize change check

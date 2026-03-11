@@ -189,6 +189,7 @@ def print_new_offers_with_screenshot(
                 "webshop_name": row['webshop_name'],
                 "url": row.get("webshop_url", "-"),
                 "korting_text": shorten_text(offer.get("original_promotion_text", "-")),
+                "korting_text_nl": offer.get("novelty_summary_nl", "-"),
                 "date": row['detected_at'].strftime("%Y-%m-%d %H:%M:%S") if row['detected_at'] else ""
             })
 
@@ -212,7 +213,8 @@ def print_new_offers_with_screenshot(
 
     # schrijf JSON bestand
     if json_entries:
-        filename = for_date.strftime("%Y-%m-%d_%H-%M-%S.json")
+        now_amsterdam = datetime.now(ZoneInfo("Europe/Amsterdam"))
+        filename = now_amsterdam.strftime("%Y-%m-%d_%H-%M-%S.json")
 
         r2_acc_id = os.getenv("R2_ACCOUNT_ID")
         r2_access_key = os.getenv("R2_ACCESS_KEY")
@@ -239,9 +241,9 @@ def print_new_offers_with_screenshot(
 
 if __name__ == "__main__":
 
-    yesterday_amsterdam = datetime.now(ZoneInfo("Europe/Amsterdam")).date() - timedelta(days=1)
+    today_amsterdam = datetime.now(ZoneInfo("Europe/Amsterdam")).date()
 
     print_new_offers_with_screenshot(
-        yesterday_amsterdam,
+        today_amsterdam,
         promotion_types_to_show=["sitewide_hero_discount", "timed", "discount_code"]
     )
