@@ -2,16 +2,12 @@ import json
 import os
 import boto3
 from datetime import date, datetime, timedelta
-from pathlib import Path
 
 from db.db_connection import get_database_connection
 from run_pipeline_screenshot_analysis import make_image_url
 from util.json_util import get_offer
 from zoneinfo import ZoneInfo
 
-
-BASE_SCREENSHOT_DIR = Path("/Users/lennartmac/Documents/ubuntu_mac_shared/screenshots")
-JSON_OUTPUT_FILE = Path("/Users/lennartmac/Documents/test_wgk.json")
 
 def resolve_screenshot_url(filename: str) -> str:
     return make_image_url(filename)
@@ -77,6 +73,60 @@ def shorten_text(text: str, max_words: int = 15) -> str:
     if len(words) <= max_words:
         return text
     return " ".join(words[:max_words]) + "…"
+
+
+def append_and_upload(json_entries):
+    if not json_entries:
+        return
+
+    # datum in Amsterdam timezone
+    now_amsterdam = datetime.now(ZoneInfo("Europe/Amsterdam"))
+    filename = now_amsterdam.strftime("%Y-%m-%d.json")
+    local_path = os.path.join("/data", filename)
+
+    # ---- lokaal appenden ----
+
+    if not os.path.exists(local_path):
+        # nieuw bestand maken
+        with open(local_path, "w", encoding="utf-8") as f:
+            json.dump(json_entries, f, ensure_ascii=False, indent=2)
+
+    else:
+        # append aan bestaande JSON array
+        with open(local_path, "rb+") as f:
+            f.seek(-1, os.SEEK_END)
+            f.truncate()  # verwijder laatste ]
+
+            f.write(b",\n")
+
+            json_string = json.dumps(json_entries, ensure_ascii=False, indent=2)
+            f.write(json_string.encode("utf-8"))
+
+            f.write(b"\n]")
+
+    # ---- upload naar R2 ----
+
+    r2_acc_id = os.getenv("R2_ACCOUNT_ID")
+    r2_access_key = os.getenv("R2_ACCESS_KEY")
+    r2_secret_key = os.getenv("R2_SECRET_KEY")
+
+    r2 = boto3.client(
+        "s3",
+        endpoint_url=f"https://{r2_acc_id}.r2.cloudflarestorage.com",
+        aws_access_key_id=r2_access_key,
+        aws_secret_access_key=r2_secret_key,
+    )
+
+    with open(local_path, "rb") as f:
+        r2.put_object(
+            Bucket="promotions",
+            Key=f"json/{filename}",
+            Body=f,
+            ContentType="application/json",
+        )
+
+    print(f"✅ Updated {filename} and uploaded to R2")
+
 
 
 def print_new_offers_with_screenshot(
@@ -189,7 +239,7 @@ def print_new_offers_with_screenshot(
                 "webshop_name": row['webshop_name'],
                 "url": row.get("webshop_url", "-"),
                 "korting_text": shorten_text(offer.get("original_promotion_text", "-")),
-                "korting_text_nl": offer.get("novelty_summary_nl", "-"),
+                "korting_text_nl": offer.get("title_dutch", "-"),
                 "date": row['detected_at'].strftime("%Y-%m-%d %H:%M:%S") if row['detected_at'] else ""
             })
 
@@ -212,32 +262,7 @@ def print_new_offers_with_screenshot(
         counter += 1
 
     # schrijf JSON bestand
-    if json_entries:
-        now_amsterdam = datetime.now(ZoneInfo("Europe/Amsterdam"))
-        filename = now_amsterdam.strftime("%Y-%m-%d_%H-%M-%S.json")
-
-        r2_acc_id = os.getenv("R2_ACCOUNT_ID")
-        r2_access_key = os.getenv("R2_ACCESS_KEY")
-        r2_secret_key = os.getenv("R2_SECRET_KEY")
-        r2_endpoint = f"https://{r2_acc_id}.r2.cloudflarestorage.com"
-
-        r2 = boto3.client(
-            "s3",
-            endpoint_url=r2_endpoint,
-            aws_access_key_id=r2_access_key,
-            aws_secret_access_key=r2_secret_key,
-        )
-
-        json_string = json.dumps(json_entries, ensure_ascii=False, indent=2)
-
-        r2.put_object(
-            Bucket="promotions",
-            Key=f"json/{filename}",
-            Body=json_string.encode("utf-8"),
-            ContentType="application/json",
-        )
-
-        print(f"✅ JSON file written to R2: {filename}")
+    append_and_upload(json_entries)
 
 if __name__ == "__main__":
 

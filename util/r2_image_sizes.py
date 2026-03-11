@@ -194,7 +194,7 @@ def print_shops_with_large_filesize_change(latest_two, threshold_percent, base_u
 def main():
 
     base_url = "https://pub-f75dabf2f86f4ad4ba4765ede21e47cc.r2.dev/"
-    threshold_percent = 20
+    threshold_percent = 15
 
     latest_two = get_two_latest_per_shop_from_bucket()
 
