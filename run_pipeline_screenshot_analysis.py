@@ -35,7 +35,7 @@ def make_image_url(image_filename: str) -> str:
 
 def main():
 
-    filesize_threshold = 20
+    filesize_threshold = 15
 
     filename_screenshot_dict = get_filenames_on_r2_per_webshop()
 
@@ -66,12 +66,12 @@ def main():
                     print(f"Skipping {image_filename}: filesize info missing.")
                     continue
 
-                # if percent_filesize_change < filesize_threshold:
-                #     print(
-                #         f"Skipping {image_filename}: filesize change "
-                #         f"{percent_filesize_change:.2f}% < {filesize_threshold}%"
-                #     )
-                #     continue
+                if percent_filesize_change < filesize_threshold:
+                    print(
+                        f"Skipping {image_filename}: filesize change "
+                        f"{percent_filesize_change:.2f}% < {filesize_threshold}%"
+                    )
+                    continue
 
                 print(f"Analyzing image for: {webshop_name}")
                 try:

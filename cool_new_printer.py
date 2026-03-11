@@ -1,4 +1,6 @@
 import json
+import os
+import boto3
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
@@ -207,15 +209,38 @@ def print_new_offers_with_screenshot(
         print("-" * 60)
         counter += 1
 
-    # # schrijf JSON bestand
-    # if json_entries:
-    #     with open(JSON_OUTPUT_FILE, "w", encoding="utf-8") as f:
-    #         json.dump(json_entries, f, ensure_ascii=False, indent=2)
-    #     print(f"✅ JSON file written to {JSON_OUTPUT_FILE}")
+    # schrijf JSON bestand
+    if json_entries:
+        filename = for_date.strftime("%Y-%m-%d_%H-%M-%S.json")
+
+        r2_acc_id = os.getenv("R2_ACCOUNT_ID")
+        r2_access_key = os.getenv("R2_ACCESS_KEY")
+        r2_secret_key = os.getenv("R2_SECRET_KEY")
+        r2_endpoint = f"https://{r2_acc_id}.r2.cloudflarestorage.com"
+
+        r2 = boto3.client(
+            "s3",
+            endpoint_url=r2_endpoint,
+            aws_access_key_id=r2_access_key,
+            aws_secret_access_key=r2_secret_key,
+        )
+
+        json_string = json.dumps(json_entries, ensure_ascii=False, indent=2)
+
+        r2.put_object(
+            Bucket="promotions",
+            Key=f"json/{filename}",
+            Body=json_string.encode("utf-8"),
+            ContentType="application/json",
+        )
+
+        print(f"✅ JSON file written to R2: {filename}")
 
 if __name__ == "__main__":
-    # Voorbeeld: alleen sitewide_hero_discount en timed tonen
+
+    yesterday_amsterdam = datetime.now(ZoneInfo("Europe/Amsterdam")).date() - timedelta(days=1)
+
     print_new_offers_with_screenshot(
-        date(2026, 3, 7),
+        yesterday_amsterdam,
         promotion_types_to_show=["sitewide_hero_discount", "timed", "discount_code"]
     )
