@@ -79,53 +79,65 @@ def append_and_upload(json_entries):
     if not json_entries:
         return
 
-    # datum in Amsterdam timezone
     now_amsterdam = datetime.now(ZoneInfo("Europe/Amsterdam"))
-    filename = now_amsterdam.strftime("%Y-%m-%d.json")
-    local_path = os.path.join("/data", filename)
+    date_str = now_amsterdam.strftime("%Y-%m-%d")
 
-    # ---- lokaal appenden ----
+    ndjson_filename = f"{date_str}.ndjson"
+    json_filename = f"{date_str}.json"
 
-    if not os.path.exists(local_path):
-        # nieuw bestand maken
-        with open(local_path, "w", encoding="utf-8") as f:
-            json.dump(json_entries, f, ensure_ascii=False, indent=2)
+    ndjson_path = os.path.join("/data", ndjson_filename)
+    json_path = os.path.join("/data", json_filename)
 
-    else:
-        # append aan bestaande JSON array
-        with open(local_path, "rb+") as f:
-            f.seek(-1, os.SEEK_END)
-            f.truncate()  # verwijder laatste ]
+    # ---- lokaal NDJSON appenden ----
 
-            f.write(b",\n")
+    with open(ndjson_path, "a", encoding="utf-8") as f:
+        for entry in json_entries:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
-            json_string = json.dumps(json_entries, ensure_ascii=False, indent=2)
-            f.write(json_string.encode("utf-8"))
+    # ---- NDJSON -> JSON array genereren ----
 
-            f.write(b"\n]")
+    objects = []
 
-    # ---- upload naar R2 ----
+    with open(ndjson_path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                objects.append(json.loads(line))
 
-    r2_acc_id = os.getenv("R2_ACCOUNT_ID")
-    r2_access_key = os.getenv("R2_ACCESS_KEY")
-    r2_secret_key = os.getenv("R2_SECRET_KEY")
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(objects, f, ensure_ascii=False, indent=2)
+
+    # ---- R2 client ----
 
     r2 = boto3.client(
         "s3",
-        endpoint_url=f"https://{r2_acc_id}.r2.cloudflarestorage.com",
-        aws_access_key_id=r2_access_key,
-        aws_secret_access_key=r2_secret_key,
+        endpoint_url=f"https://{os.getenv('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com",
+        aws_access_key_id=os.getenv("R2_ACCESS_KEY"),
+        aws_secret_access_key=os.getenv("R2_SECRET_KEY"),
     )
 
-    with open(local_path, "rb") as f:
+    # ---- upload NDJSON ----
+
+    with open(ndjson_path, "rb") as f:
         r2.put_object(
             Bucket="promotions",
-            Key=f"json/{filename}",
+            Key=f"ndjson/{ndjson_filename}",
+            Body=f,
+            ContentType="application/x-ndjson",
+        )
+
+    # ---- upload JSON ----
+
+    with open(json_path, "rb") as f:
+        r2.put_object(
+            Bucket="promotions",
+            Key=f"json/{json_filename}",
             Body=f,
             ContentType="application/json",
         )
 
-    print(f"✅ Updated {filename} and uploaded to R2")
+    print(f"✅ Appended {len(json_entries)} entries")
+    print(f"☁️ Uploaded {ndjson_filename} and {json_filename} to R2")
 
 
 
