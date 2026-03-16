@@ -1,5 +1,4 @@
 # json_util.py
-from ai.check_new_promotions_feb_version import analyze_promotion_novelty
 from db.webshops_db_access import get_previous_analysis_results, get_screenshot_analysis_result_by_id
 import json
 from typing import Optional
