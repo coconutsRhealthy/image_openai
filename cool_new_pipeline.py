@@ -8,6 +8,8 @@ from ai.check_new_promotions_feb_version import analyze_promotion_novelty
 from util.json_util import parse_openai_json
 from zoneinfo import ZoneInfo
 
+from util.new_promotion_exporter import export_new_offers_for_screenshot
+
 
 def write_analysis_to_db(webshop_id, screenshot_id, analysis_result_json: str):
     """
@@ -63,6 +65,9 @@ def run_pipeline(datetime_from: datetime, num_previous=1):
 
             # Schrijf naar DB
             write_analysis_to_db(webshop_id, screenshot_id, parsed_novelty_json)
+
+            # Exporteer json
+            export_new_offers_for_screenshot(webshop_id, screenshot_id, parsed_novelty_json)
 
 
 if __name__ == "__main__":

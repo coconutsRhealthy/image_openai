@@ -84,6 +84,25 @@ def get_webshop_id(screenshot_id):
     else:
         return None
 
+def get_webshop_name_and_url(webshop_id: int):
+    query = """
+        SELECT webshop_name, webshop_url
+        FROM webshop_info
+        WHERE id = %s
+        LIMIT 1
+    """
+
+    with get_database_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(query, (webshop_id,))
+        row = cursor.fetchone()
+        cursor.close()
+
+    if not row:
+        return None, None
+
+    return row[0], row[1]
+
 def get_existing_screenshot_ids_in_detected_discounts() -> set:
     with get_database_connection() as conn:
         cursor = conn.cursor()

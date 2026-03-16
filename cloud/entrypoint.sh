@@ -25,9 +25,6 @@ while true; do
     echo "$(date '+%Y-%m-%d %H:%M:%S') | Running cool_new_pipeline.py..."
     python cool_new_pipeline.py || echo "$(date '+%Y-%m-%d %H:%M:%S') | ERROR in cool_new_pipeline.py"
 
-    echo "$(date '+%Y-%m-%d %H:%M:%S') | Running cool_new_printer.py..."
-    python cool_new_printer.py || echo "$(date '+%Y-%m-%d %H:%M:%S') | ERROR in cool_new_printer.py"
-
     echo "$(date '+%Y-%m-%d %H:%M:%S') | Waiting 1 hour before next run..."
     sleep 3600
 done
