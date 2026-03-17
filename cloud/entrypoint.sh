@@ -19,6 +19,9 @@ EOF
 
 echo "$(date '+%Y-%m-%d %H:%M:%S') | Starting hourly Python scripts..."
 while true; do
+    echo "$(date '+%Y-%m-%d %H:%M:%S') | Running webshops_info_manager.py..."
+    python util/webshops_info_manager.py || echo "$(date '+%Y-%m-%d %H:%M:%S') | ERROR in webshops_info_manager.py"
+
     echo "$(date '+%Y-%m-%d %H:%M:%S') | Running run_pipeline_screenshot_analysis.py..."
     python run_pipeline_screenshot_analysis.py || echo "$(date '+%Y-%m-%d %H:%M:%S') | ERROR in run_pipeline_screenshot_analysis.py"
 
