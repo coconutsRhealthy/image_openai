@@ -99,7 +99,7 @@ def export_new_offers_for_screenshot(webshop_id: int, screenshot_id: int, novelt
 
     new_offers = [
         offer for offer in offers
-        if offer.get("is_new") is True and offer.get("offer_id")
+        if offer.get("is_new") is True
     ]
 
     if not new_offers:
@@ -112,18 +112,16 @@ def export_new_offers_for_screenshot(webshop_id: int, screenshot_id: int, novelt
 
     for novelty_offer in new_offers:
 
-        offer_id = novelty_offer["offer_id"]
+        offer_text = novelty_offer.get("novelty_summary_nl")
 
-        full_offer = get_offer(screenshot_id, offer_id)
-
-        if not full_offer:
+        if not offer_text:
             continue
 
         entry = {
             "webshop_name": webshop_name,
             "url": webshop_url or "-",
-            "korting_text": shorten_text(full_offer.get("original_promotion_text", "-")),
-            "korting_text_nl": full_offer.get("title_dutch", "-"),
+            "korting_text": offer_text,
+            "korting_text_nl": offer_text,
             "date": now_amsterdam.strftime("%Y-%m-%d %H:%M:%S")
         }
 

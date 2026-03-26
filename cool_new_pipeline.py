@@ -1,6 +1,7 @@
 import json
 from datetime import datetime, timedelta
 
+from ai.check_new_promotions_march_version import check_new_promotions_json
 from db.store_new_promotion_analysis import insert_novelty
 from db.webshops_db_access import get_screenshot_ids_since, get_webshop_id, get_existing_screenshot_ids_in_detected_discounts
 from util.json_util import create_openai_prompting_structure_current, create_openai_prompting_structure_previous
@@ -9,6 +10,7 @@ from util.json_util import parse_openai_json
 from zoneinfo import ZoneInfo
 
 from util.new_promotion_exporter import export_new_offers_for_screenshot
+from util.r2_image_urls import get_latest_screenshot_urls
 
 
 def write_analysis_to_db(webshop_id, screenshot_id, analysis_result_json: str):
@@ -45,14 +47,23 @@ def run_pipeline(datetime_from: datetime, num_previous=1):
         # Bepaal webshop ID
         webshop_id = get_webshop_id(screenshot_id)
 
-        # Huidige snapshot
-        result_current = create_openai_prompting_structure_current(screenshot_id)
+        # # Huidige snapshot
+        # result_current = create_openai_prompting_structure_current(screenshot_id)
+        #
+        # # Vorige snapshots
+        # results_previous = create_openai_prompting_structure_previous(screenshot_id, num_previous)
+        #
+        # # Analyseer novelty
+        # novelty_result = analyze_promotion_novelty(result_current, results_previous)
 
-        # Vorige snapshots
-        results_previous = create_openai_prompting_structure_previous(screenshot_id, num_previous)
+        latest_urls = get_latest_screenshot_urls(webshop_id, 2)
 
-        # Analyseer novelty
-        novelty_result = analyze_promotion_novelty(result_current, results_previous)
+        if len(latest_urls) < 2:
+            print(f"⚠️ Not enough screenshots for webshop_id {webshop_id}")
+            continue
+
+        newest, second_newest = latest_urls[:2]
+        novelty_result = check_new_promotions_json(second_newest, newest)
 
         # JSON check
         parsed_novelty_result = parse_openai_json(novelty_result)

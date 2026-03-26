@@ -71,7 +71,7 @@ def main():
                 print(f"Analyzing image for: {webshop_name}")
                 try:
                     image_url = make_image_url(image_filename)
-                    analysis_result = extract_promotions_from_image(image_url)
+                    analysis_result = "{}"
                     print(f"Analysis result: {analysis_result}")
 
                     parsed_result = parse_openai_json(analysis_result)

@@ -23,7 +23,7 @@ def check_new_promotions(screenshot_t_minus_1, screenshot_t):
 def check_new_promotions_json(screenshot_t_minus_1, screenshot_t):
     result = check_new_promotions(screenshot_t_minus_1, screenshot_t)
 
-    if result.strip() == "-":
+    if result.strip() in ["-", "–", "—"]:
         # lege JSON teruggeven
         return json.dumps({"offers": []}, ensure_ascii=False)
 
