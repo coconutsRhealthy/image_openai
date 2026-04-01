@@ -56,22 +56,21 @@ def main():
                     # print(f"Skipping {image_filename}, already in DB.")
                     continue
 
-                # 🔹 Filesize change check
-                percent_filesize_change = get_filesize_change_percent(
-                    image_filename,
-                    filename_index
-                )
-
-                if percent_filesize_change is None:
-                    continue
-
-                if percent_filesize_change < filesize_threshold:
-                    continue
-
                 print(f"Analyzing image for: {webshop_name}")
                 try:
                     image_url = make_image_url(image_filename)
-                    analysis_result = extract_promotions_from_image(image_url)
+
+                    # 🔹 Filesize change check
+                    percent_filesize_change = get_filesize_change_percent(
+                        image_filename,
+                        filename_index
+                    )
+
+                    if percent_filesize_change is None or percent_filesize_change < filesize_threshold:
+                        analysis_result = {"offers": []}
+                    else:
+                        analysis_result = extract_promotions_from_image(image_url)
+
                     print(f"Analysis result: {analysis_result}")
 
                     parsed_result = parse_openai_json(analysis_result)
@@ -86,8 +85,10 @@ def main():
 
                     parsed_result_json = json.dumps(parsed_result, ensure_ascii=False)
 
+                    filesize = filename_index.get(image_filename, {}).get("filesize", 0)
+
                     # Store result in DB using foreign key logic
-                    store_result(webshop_name, image_filename, parsed_result_json)
+                    store_result(webshop_name, image_filename, parsed_result_json, filesize)
 
                     # 🔹 Update cache zodat dezelfde image niet opnieuw verwerkt wordt
                     existing_images.add(image_filename)
