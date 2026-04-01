@@ -71,9 +71,7 @@ def main():
                     if percent_filesize_change is None or percent_filesize_change < filesize_threshold:
                         analysis_result = json.dumps({"offers": []}, ensure_ascii=False)
                     else:
-                        #tijdelijk niet dit
-                        #analysis_result = extract_promotions_from_image(image_url)
-                        analysis_result = json.dumps({"offers": []}, ensure_ascii=False)
+                        analysis_result = extract_promotions_from_image(image_url)
 
                     print(f"Analysis result: {analysis_result}")
 
