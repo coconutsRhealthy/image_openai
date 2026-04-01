@@ -4,7 +4,7 @@ import uuid
 from ai.analyze_images import extract_promotions_from_image
 from db.store_screenshot_analysis_result import store_result
 from db.db_connection import get_database_connection
-from util.images_on_r2 import get_filenames_on_r2_per_webshop
+from util.images_on_r2 import get_files_with_sizes_per_webshop
 from util.json_util import parse_openai_json
 
 from util.r2_image_sizes import (
@@ -37,9 +37,11 @@ def main():
 
     filesize_threshold = 15
 
-    filename_screenshot_dict = get_filenames_on_r2_per_webshop()
+    files_with_sizes_per_webshop = get_files_with_sizes_per_webshop()
 
     # 🔹 Filesize index bouwen
+    #TODO
+    # -> improvement, dit kan nu ook uit files_with_sizes_per_webshop gehaald worden...
     latest_two = get_two_latest_per_shop_from_bucket()
     filename_index = build_filename_index(latest_two)
 
@@ -48,30 +50,31 @@ def main():
         existing_images = get_existing_images(connection)
         print(f"ℹ️ {len(existing_images)} images already stored in DB")
 
-        for webshop_name, image_filenames in filename_screenshot_dict.items():
-            for image_filename in image_filenames:
+        for webshop_name, image_filenames in files_with_sizes_per_webshop.items():
+            for image_filename, filesize in image_filenames:
 
                 # 🔹 Skip als image al in DB zit
                 if image_filename in existing_images:
                     # print(f"Skipping {image_filename}, already in DB.")
                     continue
 
-                # 🔹 Filesize change check
-                percent_filesize_change = get_filesize_change_percent(
-                    image_filename,
-                    filename_index
-                )
-
-                if percent_filesize_change is None:
-                    continue
-
-                if percent_filesize_change < filesize_threshold:
-                    continue
-
                 print(f"Analyzing image for: {webshop_name}")
                 try:
                     image_url = make_image_url(image_filename)
-                    analysis_result = extract_promotions_from_image(image_url)
+
+                    # 🔹 Filesize change check
+                    percent_filesize_change = get_filesize_change_percent(
+                        image_filename,
+                        filename_index
+                    )
+
+                    if percent_filesize_change is None or percent_filesize_change < filesize_threshold:
+                        analysis_result = json.dumps({"offers": []}, ensure_ascii=False)
+                    else:
+                        #tijdelijk niet dit
+                        #analysis_result = extract_promotions_from_image(image_url)
+                        analysis_result = json.dumps({"offers": []}, ensure_ascii=False)
+
                     print(f"Analysis result: {analysis_result}")
 
                     parsed_result = parse_openai_json(analysis_result)
@@ -87,7 +90,7 @@ def main():
                     parsed_result_json = json.dumps(parsed_result, ensure_ascii=False)
 
                     # Store result in DB using foreign key logic
-                    store_result(webshop_name, image_filename, parsed_result_json)
+                    store_result(webshop_name, image_filename, parsed_result_json, filesize)
 
                     # 🔹 Update cache zodat dezelfde image niet opnieuw verwerkt wordt
                     existing_images.add(image_filename)

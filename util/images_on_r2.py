@@ -21,7 +21,7 @@ FILENAME_TIMESTAMP_REGEX = re.compile(r".*_(\d{8})_(\d{6})")
 # ======================
 # MAIN
 # ======================
-def get_filenames_on_r2_per_webshop() -> dict[str, list[str]]:
+def get_files_with_sizes_per_webshop() -> dict[str, list[tuple[str, int]]]:
     start_date = datetime.strptime(START_DATE, "%Y-%m-%d")
 
     s3 = boto3.client(
@@ -55,14 +55,16 @@ def get_filenames_on_r2_per_webshop() -> dict[str, list[str]]:
             if file_datetime < start_date:
                 continue
 
+            filesize = obj["Size"]
+
             # voeg toe aan dict per webshop
             if webshop not in webshop_files:
                 webshop_files[webshop] = []
-            webshop_files[webshop].append((file_datetime, filename))
+            webshop_files[webshop].append((file_datetime, filename, filesize))
 
-    # Zet alles om naar dict[webshop] = lijst van filenames (gesorteerd op datetime)
+    # sorteer en return (nu inclusief filesize)
     filename_screenshot_dict = {
-        webshop: [fname for _, fname in sorted(files, key=lambda x: x[0])]
+        webshop: [(fname, fsize) for _, fname, fsize in sorted(files, key=lambda x: x[0])]
         for webshop, files in webshop_files.items()
     }
 
