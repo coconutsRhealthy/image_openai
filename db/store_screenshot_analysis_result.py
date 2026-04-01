@@ -13,7 +13,7 @@ def get_webshop_id_by_name(webshop_name):
         cursor.close()
         return result[0] if result else None
 
-def store_result(webshop_name, image_filename, analysis_result, filesize):
+def store_result(webshop_name, image_filename, analysis_result):
     webshop_id = get_webshop_id_by_name(webshop_name)
     if webshop_id is None:
         print(f"Webshop_name not found in webshop_info: {webshop_name}")
@@ -28,14 +28,14 @@ def store_result(webshop_name, image_filename, analysis_result, filesize):
         cursor = db_connection.cursor()
 
         insert_query = """
-        INSERT INTO screenshot_analysis (webshop_id, image_filename, analysis_result, screenshot_datetime, filesize_bytes)
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO screenshot_analysis (webshop_id, image_filename, analysis_result, screenshot_datetime)
+        VALUES (%s, %s, %s, %s)
         """
-        cursor.execute(insert_query, (webshop_id, image_filename, analysis_result, screenshot_dt, filesize))
+        cursor.execute(insert_query, (webshop_id, image_filename, analysis_result, screenshot_dt))
         db_connection.commit()
 
         cursor.close()
-        print(f"Analysis stored for webshop_id={webshop_id}: {webshop_name} | datetime={screenshot_dt} | filesize={filesize} bytes")
+        print(f"Analysis stored for webshop_id={webshop_id}: {webshop_name} | datetime={screenshot_dt}")
 
 def extract_datetime_from_image_filename(image_filename):
     match = re.search(
