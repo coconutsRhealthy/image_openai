@@ -34,7 +34,7 @@ def main():
 
     with get_database_connection() as connection:
         existing_images = get_existing_images(connection)
-        print(f"ℹ️ {len(existing_images)} images already stored in DB")
+        print(f"ℹ️ {len(existing_images)} images already stored in DB (eije :))")
 
         for shop, files in files_per_shop.items():
             for _, filename, filesize in files:
