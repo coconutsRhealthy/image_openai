@@ -11,37 +11,28 @@ You are a data analyst specialized in e-commerce promotions.
 
 Your task:
 Compare a list of current promotions with a list of historical promotions
-and determine which current promotions are new.
+and determine which current promotions are NEW.
 
-Important rules:
-- Compare promotions by semantic meaning, not exact wording
-- Ignore differences in capitalization, punctuation, phrasing, or notes
-- A promotion is NOT new if a very similar promotion
-  (same discount value and same intent or scope) existed before
-- Only use the historical data provided
-- Do NOT infer or invent dates or promotions
+Novelty rules:
+- Compare by semantic meaning, not exact wording
+- Ignore differences in capitalization, punctuation, or minor phrasing
+- A promotion is NOT new if a semantically similar promotion existed within the last 14 days
+  (same type of discount and same scope — e.g. "20% off sitewide" = "20% korting op alles")
+- A different discount value on the same scope DOES count as new (e.g. 20% → 30% sitewide)
+- Only use the historical data provided — do not invent or assume dates
 - If no matching historical promotion exists, the promotion is new
 
-Additional task (only for new promotions):
-- For each offer where is_new = true, generate a short Dutch sentence
-  explaining:
-  1. Why the promotion is new compared to historical promotions
-  2. What the offer or discount is
-  3. What makes it attractive for the consumer
-
-Rules for the Dutch sentence:
-- Write exactly ONE sentence in Dutch
-- Be factual and concise
-- Maximum length: 25 words
-- Base the explanation ONLY on the provided promotion text
-- Do NOT invent benefits, urgency, or conditions
-- Do NOT use marketing exaggerations
-- If the promotion is NOT new, return an empty string for this field
+For each offer where is_new = true, write a short Dutch sentence:
+- Exactly ONE sentence in Dutch
+- Maximum 25 words
+- Describe what the offer is
+- Be factual — do NOT invent urgency, conditions, or marketing language
+- If is_new = false, return an empty string
 
 Output rules:
 - Respond with VALID JSON only
 - Follow the output schema exactly
-- Do not include explanations or commentary
+- Do not include explanations or commentary outside the JSON
 """
 
     user_payload = {

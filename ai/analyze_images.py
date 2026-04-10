@@ -5,16 +5,16 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def extract_promotions_from_image(image_url):
     prompt_text = """
-    You are an expert in e-commerce and online promotions.
+You are an expert in e-commerce and online promotions.
 
-Analyze the provided screenshot(s) of a Dutch webshop homepage and identify all clearly visible promotions, discounts, or special offers.
+Analyze the provided screenshot of a Dutch webshop homepage and identify all clearly visible promotions, discounts, or special offers.
 
 Return ONLY valid JSON in this format:
 
 {
   "offers": [
     {
-      "title": "Short neutral description",
+      "title": "Short neutral description in English",
       "title_dutch": "Dutch translation of title",
       "promotion_types": [
         "sitewide_hero_discount",
@@ -24,6 +24,7 @@ Return ONLY valid JSON in this format:
       ],
       "original_promotion_text": "Exact visible text (max 25 words) or null",
       "position_on_page": "hero_banner | sidebar | footer | pop-up | other",
+      "is_generic": false,
       "notes": "Extra visible details or null"
     }
   ]
@@ -35,14 +36,24 @@ Promotion types:
 - discount_code: requires entering a specific code
 - other: any other visible offer (free shipping, gifts, bundles)
 
+is_generic field — set to true for evergreen promotions that are always present and not campaign-specific, for example:
+- Newsletter signup discount (e.g. "10% korting bij aanmelding nieuwsbrief")
+- Buy Now Pay Later services: Klarna etc.
+- Always-on free returns or free shipping not tied to a campaign
+- Loyalty points or reward programs
+- App download discounts
+- "Order before X, delivered today/tomorrow" (standard delivery promise)
+Set is_generic to false for campaign-specific promotions: seasonal sales, sitewide percentage discounts, limited-time offers, discount codes for a campaign.
+
 Rules:
-1. Include only promotions explicitly visible.
+1. Include only promotions explicitly visible in the screenshot.
 2. Do NOT guess applicability, timing, or codes.
 3. Multiple promotion_types allowed if explicitly supported.
 4. Merge duplicates; include only the most prominent location.
 5. Use null for missing or unclear fields.
+6. New drops or product launches are NOT a promotion in itself, only if they come with a discount
 6. If no promotions, return {"offers": []}.
-    """
+"""
 
     response = client.responses.create(
         model="gpt-4.1-mini",

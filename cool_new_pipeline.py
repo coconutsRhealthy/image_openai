@@ -74,4 +74,4 @@ if __name__ == "__main__":
     today_amsterdam = datetime.now(ZoneInfo("Europe/Amsterdam")).date()
     date_minus_x_days = today_amsterdam - timedelta(days=2)
     datetime_from = datetime(date_minus_x_days.year, date_minus_x_days.month, date_minus_x_days.day)
-    run_pipeline(datetime_from=datetime_from, num_previous=1)
+    run_pipeline(datetime_from=datetime_from, num_previous=5)

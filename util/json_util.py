@@ -6,12 +6,19 @@ from typing import Optional
 def create_openai_prompting_structure_current(screenshot_id):
     current_result = get_screenshot_analysis_result_by_id(screenshot_id)
     parsed = parse_openai_json(current_result)
+    if parsed is None:
+        return parsed
+
+    # Filter out generic/evergreen promotions — they are not interesting
+    offers = parsed.get("offers", [])
+    parsed["offers"] = [o for o in offers if not o.get("is_generic", False)]
     return parsed
 
 def create_openai_prompting_structure_previous(screenshot_id, num_previous):
     """
     Zet eerdere analyse-resultaten om naar een lijst van Python dicts
     die direct geschikt zijn als historische input voor analyze_promotion_novelty.
+    Alleen de promotietekst wordt meegestuurd (geen overbodige velden).
     """
     previous_results = get_previous_analysis_results(
         screenshot_id=screenshot_id,
@@ -23,11 +30,19 @@ def create_openai_prompting_structure_previous(screenshot_id, num_previous):
     for screenshot_datetime, json_block in previous_results.items():
         parsed = parse_openai_json(json_block)
 
-
+        # Strip offers down to just the text fields needed for comparison
+        slim_offers = []
+        for offer in parsed.get("offers", []):
+            if offer.get("is_generic", False):
+                continue
+            slim_offers.append({
+                "title": offer.get("title"),
+                "original_promotion_text": offer.get("original_promotion_text"),
+            })
 
         historical_list.append({
-            "date": screenshot_datetime.date().isoformat(),  # alleen datum, zoals je voorbeeld
-            "offers": parsed.get("offers", [])
+            "date": screenshot_datetime.date().isoformat(),
+            "offers": slim_offers
         })
 
     # Chronologisch (oudste eerst)
