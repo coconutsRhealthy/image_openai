@@ -52,7 +52,8 @@ def get_files_with_metadata_per_shop() -> dict[str, list[tuple[datetime, str, in
     return {shop: sorted(files, key=lambda x: x[0]) for shop, files in webshop_files.items()}
 
 
-def download_image_bytes(filename: str) -> bytes:
-    s3 = get_s3_client()
-    response = s3.get_object(Bucket=BUCKET_NAME, Key=filename)
-    return response["Body"].read()
+R2_PUBLIC_BASE_URL = "https://pub-f75dabf2f86f4ad4ba4765ede21e47cc.r2.dev"
+
+
+def make_image_url(filename: str) -> str:
+    return f"{R2_PUBLIC_BASE_URL}/{filename}"

@@ -1,4 +1,3 @@
-import base64
 import json
 import logging
 
@@ -47,14 +46,11 @@ Respond with JSON only:
 }"""
 
 
-def analyze_images(today_bytes: bytes, yesterday_bytes: bytes) -> dict:
+def analyze_images(yesterday_url: str, today_url: str) -> dict:
     """
-    Send both screenshots to OpenAI for comparison.
-    Returns dict with keys: has_new_promotion, promotion_text, confidence.
+    Send both screenshot URLs to OpenAI for comparison.
+    Returns dict with keys: has_new_promotion, promo_original, promo_nl_summ, confidence.
     """
-    b64_today = base64.b64encode(today_bytes).decode()
-    b64_yesterday = base64.b64encode(yesterday_bytes).decode()
-
     response = _client.chat.completions.create(
         model=config.OPENAI_MODEL,
         temperature=0,
@@ -65,17 +61,11 @@ def analyze_images(today_bytes: bytes, yesterday_bytes: bytes) -> dict:
                     {"type": "text", "text": PROMPT},
                     {
                         "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/jpeg;base64,{b64_yesterday}",
-                            "detail": "low",
-                        },
+                        "image_url": {"url": yesterday_url, "detail": "low"},
                     },
                     {
                         "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/jpeg;base64,{b64_today}",
-                            "detail": "low",
-                        },
+                        "image_url": {"url": today_url, "detail": "low"},
                     },
                 ],
             }

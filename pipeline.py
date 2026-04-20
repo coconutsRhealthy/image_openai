@@ -3,7 +3,7 @@ import time
 
 from ai.analyzer import analyze_images
 from util.new_promotion_exporter import export_new_promotion
-from util.r2_image_utils import get_files_with_metadata_per_shop, download_image_bytes
+from util.r2_image_utils import get_files_with_metadata_per_shop, make_image_url
 from util.webshops_info_manager import load_webshop_info, update_webshops
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
@@ -32,14 +32,7 @@ def run():
                 continue
 
         logger.info(f"Analyzing {shop} ({curr_filename})")
-        try:
-            today_bytes = download_image_bytes(curr_filename)
-            yesterday_bytes = download_image_bytes(prev_filename)
-        except Exception as e:
-            logger.warning(f"Could not download images for {shop}: {e}")
-            continue
-
-        result = analyze_images(today_bytes, yesterday_bytes)
+        result = analyze_images(make_image_url(prev_filename), make_image_url(curr_filename))
 
         if result.get("has_new_promotion"):
             url = webshop_urls.get(shop.lower(), "-")
