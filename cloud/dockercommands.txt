@@ -1,0 +1,7 @@
+docker build --build-arg CACHEBUST=$(date +%s) --build-arg BRANCH=main -t eije2 .
+
+docker run -d \
+  --name eije2 \
+  --env-file /root/db/.env \
+  -v promotions-json:/data \
+  eije2
