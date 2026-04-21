@@ -1,7 +1,10 @@
+import json
 import logging
+import re
 import statistics
 import time
-from datetime import timedelta
+from datetime import datetime, timedelta
+from pathlib import Path
 
 from ai.analyzer import analyze_images
 from util.new_promotion_exporter import export_new_promotion
@@ -12,8 +15,31 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(
 logger = logging.getLogger(__name__)
 
 FILESIZE_THRESHOLD = 15
+ZSCORE_ENABLED = False
 ZSCORE_THRESHOLD = 2.0
 ZSCORE_WINDOW_DAYS = 7
+
+ANALYZED_FILE = Path("/data/analyzed.json")
+ANALYZED_RETENTION_DAYS = 10
+FILENAME_DATE_REGEX = re.compile(r"_(\d{8})_\d{6}\.")
+
+
+def _load_analyzed() -> set:
+    if not ANALYZED_FILE.exists():
+        return set()
+    try:
+        return set(json.loads(ANALYZED_FILE.read_text()))
+    except Exception:
+        return set()
+
+
+def _save_analyzed(analyzed: set):
+    cutoff = datetime.now() - timedelta(days=ANALYZED_RETENTION_DAYS)
+    pruned = {
+        f for f in analyzed
+        if (m := FILENAME_DATE_REGEX.search(f)) and datetime.strptime(m.group(1), "%Y%m%d") >= cutoff
+    }
+    ANALYZED_FILE.write_text(json.dumps(list(pruned), ensure_ascii=False))
 
 
 def _z_score(files) -> "float | None":
@@ -44,7 +70,7 @@ def _should_analyze(files, shop: str) -> bool:
     change_pct = abs(curr_size - prev_size) / prev_size * 100 if prev_size > 0 else None
     filesize_triggered = change_pct is not None and change_pct >= FILESIZE_THRESHOLD
 
-    z = _z_score(files)
+    z = _z_score(files) if ZSCORE_ENABLED else None
     zscore_triggered = z is not None and abs(z) > ZSCORE_THRESHOLD
 
     if filesize_triggered or zscore_triggered:
@@ -64,6 +90,7 @@ def _should_analyze(files, shop: str) -> bool:
 def run():
     update_webshops()
     webshop_urls = load_webshop_info()
+    analyzed = _load_analyzed()
 
     files_per_shop = get_files_with_metadata_per_shop()
     logger.info(f"{len(files_per_shop)} shops found in R2")
@@ -72,14 +99,21 @@ def run():
         if len(files) < 2:
             continue
 
+        _, curr_filename, _ = files[-1]
+
+        if curr_filename in analyzed:
+            continue
+
         if not _should_analyze(files, shop):
             continue
 
         _, prev_filename, _ = files[-2]
-        _, curr_filename, _ = files[-1]
 
         logger.info(f"Analyzing {shop} ({curr_filename})")
         result = analyze_images(make_image_url(prev_filename), make_image_url(curr_filename))
+
+        analyzed.add(curr_filename)
+        _save_analyzed(analyzed)
 
         if result.get("has_new_promotion"):
             url = webshop_urls.get(shop.lower(), "-")
