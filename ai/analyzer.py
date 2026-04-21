@@ -46,11 +46,19 @@ Respond with JSON only:
 }"""
 
 
-def analyze_images(yesterday_url: str, today_url: str) -> dict:
+def _build_prompt(recent_promotions: list) -> str:
+    if not recent_promotions:
+        return PROMPT
+    lines = "\n".join(f"- {p}" for p in recent_promotions)
+    return PROMPT + f"\n\nAlready spotted recently for this webshop (do NOT report these again):\n{lines}"
+
+
+def analyze_images(yesterday_url: str, today_url: str, recent_promotions: list = None) -> dict:
     """
     Send both screenshot URLs to OpenAI for comparison.
     Returns dict with keys: has_new_promotion, promo_original, promo_nl_summ, confidence.
     """
+    prompt = _build_prompt(recent_promotions or [])
     response = _client.chat.completions.create(
         model=config.OPENAI_MODEL,
         temperature=0,
@@ -58,7 +66,7 @@ def analyze_images(yesterday_url: str, today_url: str) -> dict:
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": PROMPT},
+                    {"type": "text", "text": prompt},
                     {
                         "type": "image_url",
                         "image_url": {"url": yesterday_url, "detail": "low"},

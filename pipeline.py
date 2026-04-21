@@ -6,6 +6,8 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import requests
+
 from ai.analyzer import analyze_images
 from util.new_promotion_exporter import export_new_promotion
 from util.r2_image_utils import get_files_with_metadata_per_shop, make_image_url
@@ -22,6 +24,36 @@ ZSCORE_WINDOW_DAYS = 7
 ANALYZED_FILE = Path("/data/analyzed.json")
 ANALYZED_RETENTION_DAYS = 10
 FILENAME_DATE_REGEX = re.compile(r"_(\d{8})_\d{6}\.")
+
+SPOTTED_PROMOTIONS_URL = "https://pub-a3be569620e4415b916e737210363aee.r2.dev/spotted_promotions.json"
+SPOTTED_PROMOTIONS_WINDOW_DAYS = 7
+
+
+def _load_spotted_promotions() -> dict:
+    """Returns dict of lowercase shop name -> list of recent korting_text_nl strings."""
+    try:
+        response = requests.get(SPOTTED_PROMOTIONS_URL, timeout=10)
+        response.raise_for_status()
+        entries = response.json()
+    except Exception as e:
+        logger.warning(f"Could not load spotted_promotions.json: {e}")
+        return {}
+
+    cutoff = datetime.now() - timedelta(days=SPOTTED_PROMOTIONS_WINDOW_DAYS)
+    result = {}
+    for entry in entries:
+        try:
+            entry_date = datetime.strptime(entry["date"], "%Y-%m-%d %H:%M:%S")
+        except (KeyError, ValueError):
+            continue
+        if entry_date < cutoff:
+            continue
+        shop = entry.get("webshop_name", "").lower()
+        text = entry.get("korting_text_nl") or entry.get("korting_text")
+        if shop and text:
+            result.setdefault(shop, []).append(text)
+
+    return result
 
 
 def _load_analyzed() -> set:
@@ -91,6 +123,7 @@ def run():
     update_webshops()
     webshop_urls = load_webshop_info()
     analyzed = _load_analyzed()
+    spotted = _load_spotted_promotions()
 
     files_per_shop = get_files_with_metadata_per_shop()
     logger.info(f"{len(files_per_shop)} shops found in R2")
@@ -109,8 +142,9 @@ def run():
 
         _, prev_filename, _ = files[-2]
 
-        logger.info(f"Analyzing {shop} ({curr_filename})")
-        result = analyze_images(make_image_url(prev_filename), make_image_url(curr_filename))
+        recent = spotted.get(shop.lower(), [])
+        logger.info(f"Analyzing {shop} ({curr_filename}) — {len(recent)} recent promotion(s) in context")
+        result = analyze_images(make_image_url(prev_filename), make_image_url(curr_filename), recent)
 
         analyzed.add(curr_filename)
         _save_analyzed(analyzed)
