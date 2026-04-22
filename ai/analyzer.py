@@ -32,6 +32,9 @@ Examples of promotions to IGNORE:
 - 30 dagen gratis retourneren
 - 10% korting bij inschrijving nieuwsbrief
 - 10% korting voor nieuwe klanten met code HELLO
+- 10% korting op eerste bestelling met persoonlijke kortingscode
+- 10% korting op eerste bestelling bij inschrijving
+- Korting voor nieuwe klanten of bij eerste bestelling
 - Betaal achteraf met Klarna!
 - Wekelijks nieuwe items online
 - 15% studentenkorting
