@@ -11,7 +11,6 @@ import requests
 from ai.analyzer import analyze_images
 from util.new_promotion_exporter import export_new_promotion
 from util.r2_image_utils import get_files_with_metadata_per_shop, make_image_url
-from util.webshops_info_manager import load_webshop_info, update_webshops
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
 logger = logging.getLogger(__name__)
@@ -120,8 +119,9 @@ def _should_analyze(files, shop: str) -> bool:
 
 
 def run():
-    update_webshops()
-    webshop_urls = load_webshop_info()
+    response = requests.get("https://pub-a3be569620e4415b916e737210363aee.r2.dev/webshops_info/webshop_info_export.json", timeout=10)
+    response.raise_for_status()
+    webshop_urls = {w["name"].lower(): w["url"] for w in response.json() if w.get("name") and w.get("url")}
     analyzed = _load_analyzed()
     spotted = _load_spotted_promotions()
 

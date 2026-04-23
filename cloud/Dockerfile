@@ -7,7 +7,7 @@ RUN apt-get update && \
 WORKDIR /app
 
 ARG CACHEBUST=1
-ARG BRANCH=main
+ARG BRANCH=claude_whs
 RUN git clone --depth 1 -b ${BRANCH} https://github.com/coconutsRhealthy/image_openai.git .
 
 RUN pip install --no-cache-dir -r cloud/requirements.txt
