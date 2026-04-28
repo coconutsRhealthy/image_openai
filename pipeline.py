@@ -16,6 +16,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(
 logger = logging.getLogger(__name__)
 
 FILESIZE_THRESHOLD = 15
+MIN_IMAGE_BYTES = 40 * 1024
 ZSCORE_ENABLED = False
 ZSCORE_THRESHOLD = 2.0
 ZSCORE_WINDOW_DAYS = 7
@@ -97,6 +98,13 @@ def _z_score(files) -> "float | None":
 def _should_analyze(files, shop: str) -> bool:
     curr_dt, curr_filename, curr_size = files[-1]
     prev_dt, prev_filename, prev_size = files[-2]
+
+    if curr_size < MIN_IMAGE_BYTES or prev_size < MIN_IMAGE_BYTES:
+        logger.info(
+            f"[{shop}] Skipping — image below {MIN_IMAGE_BYTES // 1024} KB "
+            f"(prev {prev_size} bytes, curr {curr_size} bytes)"
+        )
+        return False
 
     change_pct = abs(curr_size - prev_size) / prev_size * 100 if prev_size > 0 else None
     filesize_triggered = change_pct is not None and change_pct >= FILESIZE_THRESHOLD

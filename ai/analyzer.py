@@ -34,6 +34,7 @@ Examples of promotions to IGNORE:
 - 10% korting voor nieuwe klanten met code HELLO
 - 10% korting op eerste bestelling met persoonlijke kortingscode
 - 10% korting op eerste bestelling bij inschrijving
+- Shoppen met 10% korting? Ontvang een persoonlijke kortingscode voor jouw eerste bestelling.
 - Korting voor nieuwe klanten of bij eerste bestelling
 - Betaal achteraf met Klarna!
 - Wekelijks nieuwe items online
