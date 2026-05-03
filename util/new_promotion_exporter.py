@@ -87,7 +87,7 @@ def _append_to_spotted_promotions(r2, entries: list[dict]):
         else:
             raise
 
-    existing.extend(entries)
+    existing = list(entries) + existing
     r2.put_object(
         Bucket=config.PROMOTIONS_BUCKET,
         Key=SPOTTED_PROMOTIONS_KEY,
