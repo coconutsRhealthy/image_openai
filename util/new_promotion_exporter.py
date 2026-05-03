@@ -1,10 +1,13 @@
 import json
 import os
 import boto3
+from botocore.exceptions import ClientError
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
 import config
+
+SPOTTED_PROMOTIONS_KEY = "spotted_promotions.json"
 
 
 def _shorten_text(text: str, max_words: int = 15) -> str:
@@ -67,7 +70,30 @@ def _append_and_upload(entries: list[dict]):
             ContentType="application/json",
         )
 
+    _append_to_spotted_promotions(r2, entries)
+
     print(f"Exported {len(entries)} new promotion(s) to R2 ({date_str})")
+
+
+def _append_to_spotted_promotions(r2, entries: list[dict]):
+    try:
+        obj = r2.get_object(Bucket=config.PROMOTIONS_BUCKET, Key=SPOTTED_PROMOTIONS_KEY)
+        existing = json.loads(obj["Body"].read())
+        if not isinstance(existing, list):
+            raise ValueError(f"{SPOTTED_PROMOTIONS_KEY} is not a list")
+    except ClientError as e:
+        if e.response.get("Error", {}).get("Code") in ("NoSuchKey", "404"):
+            existing = []
+        else:
+            raise
+
+    existing.extend(entries)
+    r2.put_object(
+        Bucket=config.PROMOTIONS_BUCKET,
+        Key=SPOTTED_PROMOTIONS_KEY,
+        Body=json.dumps(existing, ensure_ascii=False, indent=2).encode("utf-8"),
+        ContentType="application/json",
+    )
 
 
 def export_new_promotion(webshop_name: str, webshop_url: str, result: dict):
