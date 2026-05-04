@@ -26,7 +26,7 @@ ANALYZED_RETENTION_DAYS = 10
 FILENAME_DATE_REGEX = re.compile(r"_(\d{8})_\d{6}\.")
 
 SPOTTED_PROMOTIONS_URL = "https://pub-a3be569620e4415b916e737210363aee.r2.dev/spotted_promotions.json"
-SPOTTED_PROMOTIONS_WINDOW_DAYS = 7
+SPOTTED_PROMOTIONS_WINDOW_DAYS = 21
 
 
 def _load_spotted_promotions() -> dict:
