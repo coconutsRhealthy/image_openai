@@ -6,6 +6,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 import config
+from util.telegram_notify import send_new_promo_message
 
 SPOTTED_PROMOTIONS_KEY = "spotted_promotions.json"
 
@@ -105,5 +106,7 @@ def export_new_promotion(webshop_name: str, webshop_url: str, result: dict):
         "korting_text_nl": result.get("promo_nl_summ") or "-",
         "confidence": result.get("confidence", "unknown"),
         "date": now.strftime("%Y-%m-%d %H:%M:%S"),
+        "label": None,
     }
     _append_and_upload([entry])
+    send_new_promo_message(entry)

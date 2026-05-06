@@ -9,6 +9,8 @@ from pathlib import Path
 import requests
 
 from ai.analyzer import analyze_images
+from util.dynamic_ignore import build_dynamic_ignore_block
+from util.labels import load_spotted_promotions
 from util.new_promotion_exporter import export_new_promotion
 from util.r2_image_utils import get_files_with_metadata_per_shop, make_image_url
 
@@ -25,20 +27,11 @@ ANALYZED_FILE = Path("/data/analyzed.json")
 ANALYZED_RETENTION_DAYS = 10
 FILENAME_DATE_REGEX = re.compile(r"_(\d{8})_\d{6}\.")
 
-SPOTTED_PROMOTIONS_URL = "https://pub-a3be569620e4415b916e737210363aee.r2.dev/spotted_promotions.json"
 SPOTTED_PROMOTIONS_WINDOW_DAYS = 21
 
 
-def _load_spotted_promotions() -> dict:
-    """Returns dict of lowercase shop name -> list of recent korting_text_nl strings."""
-    try:
-        response = requests.get(SPOTTED_PROMOTIONS_URL, timeout=10)
-        response.raise_for_status()
-        entries = response.json()
-    except Exception as e:
-        logger.warning(f"Could not load spotted_promotions.json: {e}")
-        return {}
-
+def _recent_promos_per_shop(entries: list[dict]) -> dict:
+    """Returns dict of lowercase shop name -> list of recent korting_text_nl strings (21d window)."""
     cutoff = datetime.now() - timedelta(days=SPOTTED_PROMOTIONS_WINDOW_DAYS)
     result = {}
     for entry in entries:
@@ -52,7 +45,6 @@ def _load_spotted_promotions() -> dict:
         text = entry.get("korting_text_nl") or entry.get("korting_text")
         if shop and text:
             result.setdefault(shop, []).append(text)
-
     return result
 
 
@@ -131,7 +123,16 @@ def run():
     response.raise_for_status()
     webshop_urls = {w["name"].lower(): w["url"] for w in response.json() if w.get("name") and w.get("url")}
     analyzed = _load_analyzed()
-    spotted = _load_spotted_promotions()
+
+    try:
+        spotted_entries = load_spotted_promotions()
+    except Exception as e:
+        logger.warning(f"Could not load spotted_promotions.json: {e}")
+        spotted_entries = []
+    spotted_per_shop = _recent_promos_per_shop(spotted_entries)
+    dynamic_ignore = build_dynamic_ignore_block(spotted_entries)
+    if dynamic_ignore:
+        logger.info(f"Dynamic IGNORE block active ({dynamic_ignore.count(chr(10))} lines)")
 
     files_per_shop = get_files_with_metadata_per_shop()
     logger.info(f"{len(files_per_shop)} shops found in R2")
@@ -150,9 +151,14 @@ def run():
 
         _, prev_filename, _ = files[-2]
 
-        recent = spotted.get(shop.lower(), [])
+        recent = spotted_per_shop.get(shop.lower(), [])
         logger.info(f"Analyzing {shop} ({curr_filename}) — {len(recent)} recent promotion(s) in context")
-        result = analyze_images(make_image_url(prev_filename), make_image_url(curr_filename), recent)
+        result = analyze_images(
+            make_image_url(prev_filename),
+            make_image_url(curr_filename),
+            recent,
+            dynamic_ignore,
+        )
 
         analyzed.add(curr_filename)
         _save_analyzed(analyzed)
