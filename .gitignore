@@ -1,0 +1,22 @@
+# Secrets / environment
+.env
+*.env
+cloud/.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+
+# Data exports / generated artifacts
+*.csv
+webshop_info_export.json
+
+# OS
+.DS_Store
