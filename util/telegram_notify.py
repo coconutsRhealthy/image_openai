@@ -27,8 +27,7 @@ def send_new_promo_message(entry: dict) -> None:
     text = (
         f"🆕 *{entry['webshop_name']}*\n"
         f"{entry.get('korting_text_nl') or '-'}\n"
-        f"_orig:_ {entry.get('korting_text') or '-'}\n"
-        f"_confidence:_ {entry.get('confidence', '?')}"
+        f"_orig:_ {entry.get('korting_text') or '-'}"
     )
 
     try:
