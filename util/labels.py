@@ -35,12 +35,6 @@ def make_entry_id(webshop_name: str, date_str: str) -> str:
     return f"{webshop_name}_{compact}"
 
 
-def entry_id_to_day(entry_id: str) -> str:
-    """Day ('YYYY-MM-DD') of an entry id produced by make_entry_id."""
-    compact = entry_id.rpartition("_")[2]
-    return f"{compact[0:4]}-{compact[4:6]}-{compact[6:8]}"
-
-
 def load_spotted_promotions() -> list[dict]:
     """Load full spotted_promotions.json from R2. Returns empty list if missing."""
     r2 = _get_r2_client()
@@ -56,8 +50,9 @@ def load_spotted_promotions() -> list[dict]:
         raise
 
 
-def set_label(entry_id: str, label) -> bool:
-    """Find entry by ID and set its label. Returns True if updated, False if not found."""
+def _set_spotted_field(entry_id: str, key: str, value) -> bool:
+    """Find the entry by id in spotted_promotions.json, set entry[key]=value, re-upload.
+    Returns True if updated, False if the entry (or file) is not found."""
     r2 = _get_r2_client()
     try:
         obj = r2.get_object(Bucket=config.PROMOTIONS_BUCKET, Key=SPOTTED_PROMOTIONS_KEY)
@@ -70,7 +65,7 @@ def set_label(entry_id: str, label) -> bool:
     updated = False
     for entry in entries:
         if make_entry_id(entry.get("webshop_name", ""), entry.get("date", "")) == entry_id:
-            entry["label"] = label
+            entry[key] = value
             updated = True
             break
 
@@ -84,3 +79,14 @@ def set_label(entry_id: str, label) -> bool:
         ContentType="application/json",
     )
     return True
+
+
+def set_label(entry_id: str, label) -> bool:
+    """Find entry by ID and set its label. Returns True if updated, False if not found."""
+    return _set_spotted_field(entry_id, "label", label)
+
+
+def set_thumbs_down(entry_id: str) -> bool:
+    """Flag an entry as thumbs-down in spotted_promotions.json (reason-independent).
+    Returns True if updated, False if not found."""
+    return _set_spotted_field(entry_id, "thumbs_down", True)
