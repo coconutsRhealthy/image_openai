@@ -55,12 +55,14 @@ On the Mac, from the repo root, copy the runtime files up (rsync respects
 On the VPS, in ~/image_openai:
   docker build -t eije2 .
 
-  # smoke test — ephemeral, proves the image imports + config resolves:
-  docker run --rm --env-file /root/db/.env eije2 \
-      python -c "import pipeline, bot.main, config; print('imports ok')"
+  # smoke test — ephemeral, proves the image imports + config resolves.
+  # NOTE: --entrypoint python is REQUIRED — without it the args are passed to
+  # entrypoint.sh, which ignores them and boots the full bot+pipeline for real.
+  docker run --rm --env-file /root/db/.env --entrypoint python eije2 \
+      -c "import pipeline, bot.main, config; print('imports ok')"
   # (optional, costs one real cycle of R2 + maybe OpenAI calls:)
-  #   docker run --rm --env-file /root/db/.env -v promotions-json:/data eije2 \
-  #       python -c "import pipeline; pipeline.run()"
+  #   docker run --rm --env-file /root/db/.env -v promotions-json:/data \
+  #       --entrypoint python eije2 -c "import pipeline; pipeline.run()"
 
   # start the container (this command IS the deployment):
   docker run -d --name eije2 --restart unless-stopped \
