@@ -1,0 +1,102 @@
+================================================================================
+VPS DEPLOYMENT — Dutch webshop promotion detector
+Mirrors the claude_birdeye_trending / claude_funda Docker setup: one
+long-running container built from local files (NOT a git clone), data in a
+named volume. Replaces the old git-clone-in-Dockerfile flow.
+================================================================================
+
+WHAT RUNS
+---------
+One long-running container. cloud/entrypoint.sh starts TWO processes and exits
+if either dies (Docker's restart policy brings the container back):
+  - python -m bot.main : Telegram bot, long-polls for 👍/👎 labels on promos
+  - python pipeline.py : every hour, for each shop compares today's vs
+                         yesterday's R2 homepage screenshot; a >=15% filesize
+                         change gates an OpenAI vision call; new promotions are
+                         appended to the daily files + spotted_promotions.json.
+
+State persists in the named volume promotions-json (mounted at /data):
+  - /data/analyzed.json        : filenames already analyzed (10-day retention)
+  - /data/<YYYY-MM-DD>.ndjson  : that day's promotions (source of truth, the
+  - /data/<YYYY-MM-DD>.json      exporter re-uploads both to R2 from here)
+The authoritative promotion archive lives in R2 (promotions bucket): daily
+json/ + ndjson/ and spotted_promotions.json.
+
+THE FILES (the deployable unit is the repo root)
+-------------------------------------------------
+  Dockerfile              builds the image (python:3.12-slim + openai/boto3/requests)
+  .dockerignore           keeps data/secrets/notes out of the build context
+  cloud/requirements.txt  runtime deps
+  cloud/entrypoint.sh     launches bot + pipeline, waits on either (container main)
+  config.py               env-backed config (OpenAI / R2 / Telegram)
+  pipeline.py             the hourly compare loop
+  ai/                     analyzer.py — the OpenAI vision call
+  bot/                    main.py — the Telegram labeling bot
+  util/                   r2 utils, labels, exporters, dynamic-ignore, telegram
+
+SECRETS (never baked into the image — passed at run time via --env-file)
+------------------------------------------------------------------------
+/root/db/.env on the VPS must define:
+  OPENAI_API_KEY
+  R2_ACCOUNT_ID  R2_ACCESS_KEY  R2_SECRET_KEY
+  TELEGRAM_BOT_TOKEN  TELEGRAM_CHAT_ID
+
+DEPLOY COMMANDS
+---------------
+On the Mac, from the repo root, copy the runtime files up (rsync respects
+.gitignore-style excludes; --delete keeps the remote clean):
+  ssh root@VPS_IP 'mkdir -p ~/image_openai'
+  rsync -avz --delete \
+    --exclude '.git' --exclude '.idea' --exclude '.claude' \
+    --exclude '__pycache__' --exclude '*.csv' --exclude '*.env' \
+    Dockerfile .dockerignore config.py pipeline.py ai bot util cloud \
+    root@VPS_IP:~/image_openai/
+
+On the VPS, in ~/image_openai:
+  docker build -t eije2 .
+
+  # smoke test — ephemeral, proves the image imports + config resolves:
+  docker run --rm --env-file /root/db/.env eije2 \
+      python -c "import pipeline, bot.main, config; print('imports ok')"
+  # (optional, costs one real cycle of R2 + maybe OpenAI calls:)
+  #   docker run --rm --env-file /root/db/.env -v promotions-json:/data eije2 \
+  #       python -c "import pipeline; pipeline.run()"
+
+  # start the container (this command IS the deployment):
+  docker run -d --name eije2 --restart unless-stopped \
+      --env-file /root/db/.env -v promotions-json:/data eije2
+
+(Replace VPS_IP with the host's address.)
+
+MONITORING
+----------
+  docker ps                        eije2 should show status "Up"
+  docker logs --tail 40 eije2      recent activity (bot + pipeline interleaved)
+  docker logs -f eije2             live tail (Ctrl+C stops the tail only)
+Pipeline lines are prefixed with the run/gating status; bot lines with "[bot]".
+
+REDEPLOY AFTER A CODE EDIT (data survives — only image/container replaced)
+--------------------------------------------------------------------------
+  # re-rsync from the Mac (see DEPLOY COMMANDS), then on the VPS:
+  cd ~/image_openai
+  docker build -t eije2 .
+  docker rm -f eije2
+  docker run -d --name eije2 --restart unless-stopped \
+      --env-file /root/db/.env -v promotions-json:/data eije2
+No GitHub push is required — the build ships exactly what you rsync'd.
+
+OPERATIONS
+----------
+  docker stop eije2      pause bot + pipeline
+  docker start eije2     resume
+Inspect the local state volume:
+  docker run --rm -v promotions-json:/data eije2 ls -la /data
+
+IF THINGS START FAILING
+-----------------------
+The pipeline loop catches per-run errors, logs them, and sleeps an hour — one
+bad run is not fatal. A burst of failures usually means: OpenAI auth/quota
+(check OPENAI_API_KEY), R2 creds/bucket (R2_* vars), or the public webshops
+export URL moved. The bot swallows poll errors and retries. Read the logged
+error before changing anything; do not blindly restart in a tight loop.
+================================================================================

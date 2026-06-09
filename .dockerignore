@@ -1,0 +1,14 @@
+# Keep the build context small + never ship secrets, data exports or notes.
+.git/
+.idea/
+.claude/
+__pycache__/
+*.pyc
+.env
+*.env
+cloud/.env
+*.csv
+*.ndjson
+webshop_info_export.json
+*.iml
+.DS_Store
