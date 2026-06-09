@@ -5,6 +5,7 @@ import requests
 
 import config
 from util.labels import REASON_TAGS, set_label
+from util.new_promotion_exporter import mark_thumbs_down_in_daily
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | [bot] %(levelname)s | %(message)s")
 logger = logging.getLogger(__name__)
@@ -77,6 +78,12 @@ def handle_callback(cb: dict):
 
     elif data.startswith("down:"):
         entry_id = data[5:]
+        # Record the thumbs-down in the daily files right away — independent of whether
+        # a reason is later chosen. Best-effort: never block the reason prompt on this.
+        try:
+            mark_thumbs_down_in_daily(entry_id)
+        except Exception as e:
+            logger.warning(f"Could not flag thumbs-down in daily files for {entry_id}: {e}")
         _api("answerCallbackQuery", callback_query_id=cb["id"])
         _api(
             "editMessageReplyMarkup",

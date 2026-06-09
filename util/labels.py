@@ -35,6 +35,12 @@ def make_entry_id(webshop_name: str, date_str: str) -> str:
     return f"{webshop_name}_{compact}"
 
 
+def entry_id_to_day(entry_id: str) -> str:
+    """Day ('YYYY-MM-DD') of an entry id produced by make_entry_id."""
+    compact = entry_id.rpartition("_")[2]
+    return f"{compact[0:4]}-{compact[4:6]}-{compact[6:8]}"
+
+
 def load_spotted_promotions() -> list[dict]:
     """Load full spotted_promotions.json from R2. Returns empty list if missing."""
     r2 = _get_r2_client()
