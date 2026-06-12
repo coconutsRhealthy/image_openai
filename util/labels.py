@@ -50,6 +50,17 @@ def load_spotted_promotions() -> list[dict]:
         raise
 
 
+def save_spotted_promotions(entries: list[dict]) -> None:
+    """Overwrite spotted_promotions.json in R2 with `entries` (newest-first order preserved)."""
+    r2 = _get_r2_client()
+    r2.put_object(
+        Bucket=config.PROMOTIONS_BUCKET,
+        Key=SPOTTED_PROMOTIONS_KEY,
+        Body=json.dumps(entries, ensure_ascii=False, indent=2).encode("utf-8"),
+        ContentType="application/json",
+    )
+
+
 def _set_spotted_field(entry_id: str, key: str, value) -> bool:
     """Find the entry by id in spotted_promotions.json, set entry[key]=value, re-upload.
     Returns True if updated, False if the entry (or file) is not found."""

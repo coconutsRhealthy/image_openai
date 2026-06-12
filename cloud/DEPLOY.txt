@@ -7,29 +7,37 @@ named volume. Replaces the old git-clone-in-Dockerfile flow.
 
 WHAT RUNS
 ---------
-One long-running container. cloud/entrypoint.sh starts TWO processes and exits
-if either dies (Docker's restart policy brings the container back):
+One long-running container. cloud/entrypoint.sh starts THREE processes and exits
+if any dies (Docker's restart policy brings the container back):
   - python -m bot.main : Telegram bot, long-polls for 👍/👎 labels on promos
   - python pipeline.py : every hour, for each shop compares today's vs
                          yesterday's R2 homepage screenshot; a >=15% filesize
                          change gates an OpenAI vision call; new promotions are
                          appended to the daily files + spotted_promotions.json.
+  - python dedup_sweep.py : every DEDUP_SWEEP_INTERVAL_HOURS (default 8, ~3x/day)
+                         scans the newest 100 entries of spotted_promotions.json,
+                         clusters same-offer promotions per shop via OpenAI, and
+                         removes the later copy of any duplicate whose original was
+                         recorded < DEDUP_WINDOW_DAYS (7) before it.
 
 State persists in the named volume promotions-json (mounted at /data):
   - /data/analyzed.json        : filenames already analyzed (10-day retention)
   - /data/<YYYY-MM-DD>.ndjson  : that day's promotions (source of truth, the
   - /data/<YYYY-MM-DD>.json      exporter re-uploads both to R2 from here)
 The authoritative promotion archive lives in R2 (promotions bucket): daily
-json/ + ndjson/ and spotted_promotions.json.
+json/ + ndjson/ and spotted_promotions.json. The dedup sweep also writes an
+audit log there — dedup_removed.json (newest-first): every removed duplicate plus
+the original entry it duplicated.
 
 THE FILES (the deployable unit is the repo root)
 -------------------------------------------------
   Dockerfile              builds the image (python:3.12-slim + openai/boto3/requests)
   .dockerignore           keeps data/secrets/notes out of the build context
   cloud/requirements.txt  runtime deps
-  cloud/entrypoint.sh     launches bot + pipeline, waits on either (container main)
+  cloud/entrypoint.sh     launches bot + pipeline + dedup sweep, waits on any (container main)
   config.py               env-backed config (OpenAI / R2 / Telegram)
   pipeline.py             the hourly compare loop
+  dedup_sweep.py          the periodic duplicate-removal loop (util/dedup.py)
   ai/                     analyzer.py — the OpenAI vision call
   bot/                    main.py — the Telegram labeling bot
   util/                   r2 utils, labels, exporters, dynamic-ignore, telegram
@@ -49,7 +57,7 @@ On the Mac, from the repo root, copy the runtime files up (rsync respects
   rsync -avz --delete \
     --exclude '.git' --exclude '.idea' --exclude '.claude' \
     --exclude '__pycache__' --exclude '*.csv' --exclude '*.env' \
-    Dockerfile .dockerignore config.py pipeline.py ai bot util cloud \
+    Dockerfile .dockerignore config.py pipeline.py dedup_sweep.py ai bot util cloud \
     root@VPS_IP:~/image_openai/
 
 On the VPS, in ~/image_openai:
@@ -59,7 +67,7 @@ On the VPS, in ~/image_openai:
   # NOTE: --entrypoint python is REQUIRED — without it the args are passed to
   # entrypoint.sh, which ignores them and boots the full bot+pipeline for real.
   docker run --rm --env-file /root/db/.env --entrypoint python eije2 \
-      -c "import pipeline, bot.main, config; print('imports ok')"
+      -c "import pipeline, bot.main, dedup_sweep, config; print('imports ok')"
   # (optional, costs one real cycle of R2 + maybe OpenAI calls:)
   #   docker run --rm --env-file /root/db/.env -v promotions-json:/data \
   #       --entrypoint python eije2 -c "import pipeline; pipeline.run()"

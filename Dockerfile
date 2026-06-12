@@ -12,7 +12,7 @@ COPY cloud/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Runtime code only (.dockerignore keeps data/secrets/notes out of the context).
-COPY config.py pipeline.py ./
+COPY config.py pipeline.py dedup_sweep.py ./
 COPY ai ./ai
 COPY bot ./bot
 COPY util ./util

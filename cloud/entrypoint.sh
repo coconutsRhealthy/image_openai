@@ -11,6 +11,9 @@ BOT_PID=$!
 python pipeline.py &
 PIPELINE_PID=$!
 
-# Exit container if either process dies → Docker restart policy brings it back
-wait -n $BOT_PID $PIPELINE_PID
+python dedup_sweep.py &
+DEDUP_PID=$!
+
+# Exit container if any process dies → Docker restart policy brings it back
+wait -n $BOT_PID $PIPELINE_PID $DEDUP_PID
 exit $?
