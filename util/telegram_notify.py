@@ -1,3 +1,4 @@
+import html
 import logging
 
 import requests
@@ -24,10 +25,13 @@ def send_new_promo_message(entry: dict) -> None:
         return
 
     entry_id = make_entry_id(entry["webshop_name"], entry["date"])
+    name = html.escape(entry["webshop_name"])
+    korting_nl = html.escape(entry.get("korting_text_nl") or "-")
+    korting_orig = html.escape(entry.get("korting_text") or "-")
     text = (
-        f"🆕 *{entry['webshop_name']}*\n"
-        f"{entry.get('korting_text_nl') or '-'}\n"
-        f"_orig:_ {entry.get('korting_text') or '-'}"
+        f"🆕 <b>{name}</b>\n"
+        f"{korting_nl}\n"
+        f"<i>orig:</i> {korting_orig}"
     )
 
     try:
@@ -36,7 +40,7 @@ def send_new_promo_message(entry: dict) -> None:
             json={
                 "chat_id": config.TELEGRAM_CHAT_ID,
                 "text": text,
-                "parse_mode": "Markdown",
+                "parse_mode": "HTML",
                 "reply_markup": _build_keyboard(entry_id),
             },
             timeout=10,
