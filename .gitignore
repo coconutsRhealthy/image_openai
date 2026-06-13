@@ -16,7 +16,7 @@ env/
 
 # Data exports / generated artifacts
 *.csv
-webshop_info_export.json
+shop_registry.json
 
 # OS
 .DS_Store

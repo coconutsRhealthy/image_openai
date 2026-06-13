@@ -9,6 +9,6 @@ __pycache__/
 cloud/.env
 *.csv
 *.ndjson
-webshop_info_export.json
+shop_registry.json
 *.iml
 .DS_Store

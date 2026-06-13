@@ -119,9 +119,13 @@ def _should_analyze(files, shop: str) -> bool:
 
 
 def run():
-    response = requests.get("https://pub-a3be569620e4415b916e737210363aee.r2.dev/webshops_info/webshop_info_export.json", timeout=10)
+    # shop_registry.json is the authoritative, engine-maintained shop metadata
+    # (URL + category), keyed by the same webshop names used for the R2 screenshot
+    # folders and consumed by the frontend. Shape: {"shops": {name: {"url": ...}}}.
+    response = requests.get("https://pub-a3be569620e4415b916e737210363aee.r2.dev/webshops_info/shop_registry.json", timeout=10)
     response.raise_for_status()
-    webshop_urls = {w["name"].lower(): w["url"] for w in response.json() if w.get("name") and w.get("url")}
+    shops = response.json().get("shops", {})
+    webshop_urls = {name.lower(): meta["url"] for name, meta in shops.items() if meta.get("url")}
     analyzed = _load_analyzed()
 
     try:
