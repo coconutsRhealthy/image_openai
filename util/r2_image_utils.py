@@ -10,7 +10,12 @@ BUCKET_NAME = config.SCREENSHOTS_BUCKET
 R2_ENDPOINT = f"https://{config.R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
 START_DATE = os.getenv("START_DATE", "2026-03-05")
 IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp")
-FILENAME_TIMESTAMP_REGEX = re.compile(r".*_(\d{8})_(\d{6})")
+# Screenshot files are named "<shop>_<YYYYMMDD>_<HHMMSS>.<ext>". The shop key is
+# everything before that trailing timestamp+extension — NOT filename.split("_")[0],
+# which truncates brands whose own name contains an underscore (e.g.
+# "fejo_studio_..." -> "fejo", "little_monkeez.nl_..." -> "little") and could even
+# merge two distinct brands that share a first token.
+SHOP_KEY_REGEX = re.compile(r"_(\d{8})_(\d{6})\.[^.]+$")
 
 
 def get_s3_client():
@@ -36,12 +41,12 @@ def get_files_with_metadata_per_shop() -> dict[str, list[tuple[datetime, str, in
                 continue
 
             filename = os.path.basename(key)
-            webshop = filename.split("_")[0]
 
-            match = FILENAME_TIMESTAMP_REGEX.match(filename)
+            match = SHOP_KEY_REGEX.search(filename)
             if not match:
                 continue
 
+            webshop = filename[:match.start()]
             date_str, time_str = match.groups()
             file_datetime = datetime.strptime(date_str + time_str, "%Y%m%d%H%M%S")
             if file_datetime < start_date:
