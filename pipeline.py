@@ -11,6 +11,7 @@ import requests
 from ai.analyzer import analyze_images
 from util.dynamic_ignore import build_dynamic_ignore_block
 from util.labels import load_spotted_promotions
+from util.mail_merge import merge_spotted_mails
 from util.new_promotion_exporter import export_new_promotion
 from util.r2_image_utils import get_files_with_metadata_per_shop, make_image_url
 
@@ -119,6 +120,11 @@ def _should_analyze(files, shop: str) -> bool:
 
 
 def run():
+    # Fold newsletter deals (spotted_mails.json) into spotted_promotions.json first,
+    # so consumers read only the one file and the merged deals are also part of the
+    # per-shop context below. Best-effort and independent of the screenshot pass.
+    merge_spotted_mails()
+
     # shop_registry.json is the authoritative, engine-maintained shop metadata
     # (URL + category), keyed by the same webshop names used for the R2 screenshot
     # folders and consumed by the frontend. Shape: {"shops": {name: {"url": ...}}}.
