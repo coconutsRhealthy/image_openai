@@ -45,7 +45,8 @@ Respond with JSON only:
 {
   "has_new_promotion": true or false,
   "promo_original": "exact visible text (max 25 words) or null",
-  "promo_nl_summ": "brief dutch summary of promotion"
+  "promo_nl_summ": "brief dutch summary of promotion",
+  "promo_en_summ": "the same summary as promo_nl_summ, in english"
 }"""
 
 
@@ -67,7 +68,7 @@ def analyze_images(
 ) -> dict:
     """
     Send both screenshot URLs to OpenAI for comparison.
-    Returns dict with keys: has_new_promotion, promo_original, promo_nl_summ.
+    Returns dict with keys: has_new_promotion, promo_original, promo_nl_summ, promo_en_summ.
     """
     prompt = _build_prompt(recent_promotions or [], negative_examples_block)
     response = _client.chat.completions.create(
@@ -89,7 +90,7 @@ def analyze_images(
                 ],
             }
         ],
-        max_tokens=200,
+        max_tokens=300,
         response_format={"type": "json_object"},
     )
 
@@ -98,7 +99,12 @@ def analyze_images(
         result = json.loads(raw)
     except json.JSONDecodeError:
         logger.warning("Could not parse OpenAI response as JSON: %s", raw)
-        result = {"has_new_promotion": False, "promo_original": None, "promo_nl_summ": None}
+        result = {
+            "has_new_promotion": False,
+            "promo_original": None,
+            "promo_nl_summ": None,
+            "promo_en_summ": None,
+        }
 
     logger.debug("OpenAI result: %s", result)
     return result

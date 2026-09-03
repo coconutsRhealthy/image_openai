@@ -104,6 +104,7 @@ def export_new_promotion(webshop_name: str, webshop_url: str, result: dict):
         "url": webshop_url or "-",
         "korting_text": _shorten_text(result.get("promo_original") or "-"),
         "korting_text_nl": result.get("promo_nl_summ") or "-",
+        "korting_text_en": result.get("promo_en_summ") or "-",
         "date": now.strftime("%Y-%m-%d %H:%M:%S"),
         "label": None,
     }
